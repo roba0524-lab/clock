@@ -1,0 +1,87 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+<meta charset="UTF-8">
+<title>置時計＋天気</title>
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<style>
+body {
+    margin: 0;
+    background: #000;
+    color: #fff;
+    font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+    height: 100vh;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+}
+
+.container {
+    text-align: center;
+}
+
+.time {
+    font-size: 96px;
+    font-weight: bold;
+}
+
+.date {
+    margin-top: 10px;
+    font-size: 24px;
+    opacity: 0.8;
+}
+
+.weather {
+    margin-top: 30px;
+    font-size: 28px;
+    line-height: 1.6;
+}
+
+.temp-main {
+    font-size: 48px;
+    margin: 10px 0;
+}
+
+.sub {
+    font-size: 22px;
+    opacity: 0.9;
+}
+</style>
+</head>
+
+<body>
+<div class="container">
+    <div class="time" id="time">--:--</div>
+    <div class="date" id="date">----</div>
+
+    <div class="weather">
+        <div id="weatherDesc">天気取得中…</div>
+        <div class="temp-main" id="currentTemp">--℃</div>
+        <div class="sub" id="tempRange">最高 --℃ / 最低 --℃</div>
+        <div class="sub" id="rain">降水確率 --%</div>
+    </div>
+</div>
+
+<script>
+/* ===== 設定 ===== */
+const API_KEY = "ここにあなたのAPIキー";
+const LAT = 34.612;   // 斑鳩町
+const LON = 135.734;
+/* ================ */
+
+// 時計表示
+function updateTime() {
+    const now = new Date();
+    const h = String(now.getHours()).padStart(2, "0");
+    const m = String(now.getMinutes()).padStart(2, "0");
+    document.getElementById("time").textContent = `${h}:${m}`;
+
+    document.getElementById("date").textContent =
+        now.toLocaleDateString("ja-JP", {
+            year: "numeric",
+            month: "long",
+            day: "numeric",
+            weekday: "short"
+        });
+}
+setInterval(updateTime,
