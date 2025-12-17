@@ -46,21 +46,19 @@ body {
 }
 
 /* =====================
-   ⏰ 時・分（Apple Watch風）
+   ⏰ 時・分
 ===================== */
-.time-block {
-  line-height: 0.9;
-}
-
 .hour {
   font-size: 34vw;
   font-weight: 900;
+  line-height: 0.9;
   letter-spacing: -0.06em;
 }
 
 .minute {
   font-size: 30vw;
   font-weight: 900;
+  line-height: 0.9;
   letter-spacing: -0.06em;
 }
 
@@ -72,7 +70,7 @@ body {
 }
 
 /* =====================
-   🌤 天気（全部2倍）
+   🌤 天気（縦並び・2倍）
 ===================== */
 .weather {
   margin-top: 3vh;
@@ -83,7 +81,7 @@ body {
   margin-bottom: 1vh;
 }
 
-.weather-temp {
+.weather-text {
   font-size: 7vw;
   font-weight: 600;
   line-height: 1.3;
@@ -100,20 +98,16 @@ body {
 <body>
 <div class="container">
 
-  <div class="time-block">
-    <div class="hour" id="hour">--</div>
-    <div class="minute" id="minute">--</div>
-  </div>
+  <div class="hour" id="hour">--</div>
+  <div class="minute" id="minute">--</div>
 
   <div class="date" id="date">----</div>
 
   <div class="weather">
     <div class="weather-icon" id="weatherIcon">--</div>
-
-    <div class="weather-temp" id="tempMax">最高 --℃</div>
-    <div class="weather-temp" id="tempMin">最低 --℃</div>
-    <div class="weather-temp" id="tempNow">現在 --℃</div>
-
+    <div class="weather-text" id="tempMax">最高 --℃</div>
+    <div class="weather-text" id="tempMin">最低 --℃</div>
+    <div class="weather-text" id="tempNow">現在 --℃</div>
     <div class="weather-rain" id="rain">☂️ 未取得</div>
   </div>
 
