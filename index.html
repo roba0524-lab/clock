@@ -4,7 +4,6 @@
 <meta charset="UTF-8">
 <title>置時計＋天気</title>
 
-<!-- 📱 iPhone 全画面化対策 -->
 <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
 <meta name="apple-mobile-web-app-capable" content="yes">
 <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
@@ -15,19 +14,16 @@
   --text: #ffffff;
 }
 
-/* =====================
-   📐 Safari高さ対策
-===================== */
 body {
   margin: 0;
   background: var(--bg);
   color: var(--text);
   font-family:
-    "Hiragino Kaku Gothic ProN",
-    "Noto Sans JP",
     -apple-system,
     BlinkMacSystemFont,
-    "Segoe UI",
+    "SF Pro Display",
+    "Hiragino Kaku Gothic ProN",
+    "Noto Sans JP",
     sans-serif;
 
   height: calc(var(--vh, 1vh) * 100);
@@ -49,57 +45,82 @@ body {
   to   { transform: translate(12px, 8px); }
 }
 
-/* ⏰ 時計 */
-.time {
-  font-size: 28vw;
-  font-weight: 900;
-  line-height: 1;
-  letter-spacing: -0.04em;
+/* =====================
+   ⏰ 時・分（Apple Watch風）
+===================== */
+.time-block {
+  line-height: 0.9;
 }
 
-/* 📅 日付 */
+.hour {
+  font-size: 34vw;
+  font-weight: 900;
+  letter-spacing: -0.06em;
+}
+
+.minute {
+  font-size: 30vw;
+  font-weight: 900;
+  letter-spacing: -0.06em;
+}
+
+/* 📅 日付（1.5倍） */
 .date {
-  font-size: 4vw;
-  margin-top: 1vh;
+  margin-top: 2vh;
+  font-size: 6vw;
   opacity: 0.9;
 }
 
-/* 🌤 天気 */
+/* =====================
+   🌤 天気（全部2倍）
+===================== */
 .weather {
-  margin-top: 4vh;
+  margin-top: 3vh;
 }
 
-.weather-line1 {
-  font-size: 5vw;
+.weather-icon {
+  font-size: 10vw;
+  margin-bottom: 1vh;
+}
+
+.weather-temp {
+  font-size: 7vw;
   font-weight: 600;
+  line-height: 1.3;
 }
 
-.weather-line2 {
-  font-size: 4.5vw;
+.weather-rain {
   margin-top: 1vh;
+  font-size: 7vw;
+  font-weight: 600;
 }
 </style>
 </head>
 
 <body>
 <div class="container">
-  <div class="time" id="time">--:--</div>
+
+  <div class="time-block">
+    <div class="hour" id="hour">--</div>
+    <div class="minute" id="minute">--</div>
+  </div>
+
   <div class="date" id="date">----</div>
 
   <div class="weather">
-    <div class="weather-line1" id="weatherLine1">
-      -- / --℃（--℃）
-    </div>
-    <div class="weather-line2" id="weatherLine2">
-      ☂️ 未取得
-    </div>
+    <div class="weather-icon" id="weatherIcon">--</div>
+
+    <div class="weather-temp" id="tempMax">最高 --℃</div>
+    <div class="weather-temp" id="tempMin">最低 --℃</div>
+    <div class="weather-temp" id="tempNow">現在 --℃</div>
+
+    <div class="weather-rain" id="rain">☂️ 未取得</div>
   </div>
+
 </div>
 
 <script>
-/* =====================
-   📐 Safari高さ固定
-===================== */
+/* 📐 Safari高さ対策 */
 function fixHeight() {
   document.documentElement.style.setProperty(
     "--vh",
@@ -109,15 +130,12 @@ function fixHeight() {
 fixHeight();
 window.addEventListener("resize", fixHeight);
 
-/* =====================
-   ⏰ 時計
-===================== */
+/* ⏰ 時計 */
 function updateTime() {
   const now = new Date();
 
-  time.textContent =
-    now.getHours().toString().padStart(2, "0") + ":" +
-    now.getMinutes().toString().padStart(2, "0");
+  hour.textContent = now.getHours().toString().padStart(2, "0");
+  minute.textContent = now.getMinutes().toString().padStart(2, "0");
 
   date.textContent = now.toLocaleDateString("ja-JP", {
     month: "long",
@@ -130,9 +148,7 @@ function updateTime() {
 setInterval(updateTime, 1000);
 updateTime();
 
-/* =====================
-   🌤 天気取得
-===================== */
+/* 🌤 天気 */
 async function fetchWeather() {
   try {
     const url =
@@ -156,26 +172,24 @@ async function fetchWeather() {
     else if (code >= 45 && code <= 48) icon = "☁️";
     else if (code >= 51) icon = "🌧️";
 
-    weatherLine1.textContent =
-      `${icon} ${max}℃ / ${min}℃（${nowTemp}℃）`;
-
-    weatherLine2.textContent =
-      rain != null ? `☂️ ${rain}%` : "☂️ 未取得";
+    weatherIcon.textContent = icon;
+    tempMax.textContent = `最高 ${max}℃`;
+    tempMin.textContent = `最低 ${min}℃`;
+    tempNow.textContent = `現在 ${nowTemp}℃`;
+    rain.textContent = rain != null ? `☂️ ${rain}%` : "☂️ 未取得";
 
     updateBackground(new Date(), rain, code);
 
   } catch {
-    weatherLine1.textContent = "-- / --℃（--℃）";
-    weatherLine2.textContent = "☂️ 未取得";
+    weatherIcon.textContent = "--";
+    rain.textContent = "☂️ 未取得";
   }
 }
 
 fetchWeather();
 setInterval(fetchWeather, 30 * 60 * 1000);
 
-/* =====================
-   🎨 背景色制御
-===================== */
+/* 🎨 背景制御 */
 function updateBackground(now, rain = 0, code = 0) {
   const hour = now.getHours();
 
