@@ -4,84 +4,191 @@
 <meta charset="UTF-8">
 <title>置時計＋天気</title>
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
+
 <style>
+:root {
+  --bg: rgb(51,123,204);
+  --text: #ffffff;
+}
+
 body {
-    margin: 0;
-    background: #000;
-    color: #fff;
-    font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
-    height: 100vh;
-    display: flex;
-    justify-content: center;
-    align-items: center;
+  margin: 0;
+  background: var(--bg);
+  color: var(--text);
+  font-family:
+    "Hiragino Kaku Gothic ProN",
+    "Noto Sans JP",
+    -apple-system,
+    BlinkMacSystemFont,
+    "Segoe UI",
+    sans-serif;
+  height: 100vh;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  overflow: hidden;
+  transition: background 1s ease;
 }
 
 .container {
-    text-align: center;
+  width: 100%;
+  text-align: center;
+  animation: burninShift 180s infinite alternate ease-in-out;
 }
 
+/* 🔥 焼き付き防止 */
+@keyframes burninShift {
+  from { transform: translate(0, 0); }
+  to   { transform: translate(12px, 8px); }
+}
+
+/* ⏰ 時刻 */
 .time {
-    font-size: 96px;
-    font-weight: bold;
+  font-size: 27vw;
+  font-weight: 900;
+  line-height: 1;
+  letter-spacing: -0.03em;
 }
 
+/* 📅 日付 */
 .date {
-    margin-top: 10px;
-    font-size: 24px;
-    opacity: 0.8;
+  font-size: 4vw;
+  margin-top: 1vh;
+  opacity: 0.9;
 }
 
+/* 🌤 天気 */
 .weather {
-    margin-top: 30px;
-    font-size: 28px;
-    line-height: 1.6;
+  margin-top: 4vh;
 }
 
-.temp-main {
-    font-size: 48px;
-    margin: 10px 0;
+.weather-main {
+  font-size: 5vw;
+  font-weight: 600;
 }
 
-.sub {
-    font-size: 22px;
-    opacity: 0.9;
+.weather-rain {
+  margin-top: 1vh;
+  font-size: 4.5vw;
+  font-weight: 600;
 }
 </style>
 </head>
 
 <body>
 <div class="container">
-    <div class="time" id="time">--:--</div>
-    <div class="date" id="date">----</div>
+  <div class="time" id="time">--:--</div>
+  <div class="date" id="date">----</div>
 
-    <div class="weather">
-        <div id="weatherDesc">天気取得中…</div>
-        <div class="temp-main" id="currentTemp">--℃</div>
-        <div class="sub" id="tempRange">最高 --℃ / 最低 --℃</div>
-        <div class="sub" id="rain">降水確率 --%</div>
+  <div class="weather">
+    <div class="weather-main" id="weatherMain">
+      ☀️ 最高 --℃ / 最低 --℃ / 現在 --℃
     </div>
+    <div class="weather-rain" id="weatherRain">
+      ☂️ --%
+    </div>
+  </div>
 </div>
 
 <script>
-/* ===== 設定 ===== */
-const API_KEY = "ここにあなたのAPIキー";
-const LAT = 34.612;   // 斑鳩町
-const LON = 135.734;
-/* ================ */
-
-// 時計表示
+// =====================
+// ⏰ 時計
+// =====================
 function updateTime() {
-    const now = new Date();
-    const h = String(now.getHours()).padStart(2, "0");
-    const m = String(now.getMinutes()).padStart(2, "0");
-    document.getElementById("time").textContent = `${h}:${m}`;
+  const now = new Date();
 
-    document.getElementById("date").textContent =
-        now.toLocaleDateString("ja-JP", {
-            year: "numeric",
-            month: "long",
-            day: "numeric",
-            weekday: "short"
-        });
+  time.textContent =
+    now.getHours().toString().padStart(2, "0") + ":" +
+    now.getMinutes().toString().padStart(2, "0");
+
+  date.textContent = now.toLocaleDateString("ja-JP", {
+    month: "long",
+    day: "numeric",
+    weekday: "short"
+  });
 }
-setInterval(updateTime,
+setInterval(updateTime, 1000);
+updateTime();
+
+// =====================
+// 🎨 背景色制御
+// =====================
+function setBackground(weatherType) {
+  const hour = new Date().getHours();
+
+  // 🌙 夜が最優先
+  if (hour >= 18) {
+    document.documentElement.style.setProperty("--bg", "#0b1d3a");
+    return;
+  }
+
+  switch (weatherType) {
+    case "sunny":
+      document.documentElement.style.setProperty("--bg", "#f4a340");
+      break;
+    case "mixed":
+      document.documentElement.style.setProperty("--bg", "rgb(51,123,204)");
+      break;
+    case "rain":
+      document.documentElement.style.setProperty("--bg", "#8a8a8a");
+      break;
+    default:
+      document.documentElement.style.setProperty("--bg", "rgb(51,123,204)");
+  }
+}
+
+// =====================
+// 🌤 天気（Open-Meteo）
+// =====================
+async function fetchWeather() {
+  const url =
+    "https://api.open-meteo.com/v1/forecast" +
+    "?latitude=34.612&longitude=135.734" +
+    "&daily=temperature_2m_max,temperature_2m_min,precipitation_probability_max,weather_code" +
+    "&current_weather=true" +
+    "&timezone=Asia%2FTokyo";
+
+  const res = await fetch(url);
+  const data = await res.json();
+
+  const maxTemp = Math.round(data.daily.temperature_2m_max[0]);
+  const minTemp = Math.round(data.daily.temperature_2m_min[0]);
+  const rain = data.daily.precipitation_probability_max?.[0];
+  const currentTemp = Math.round(data.current_weather.temperature);
+  const code = data.daily.weather_code[0];
+
+  let icon = "☀️";
+  let weatherType = "sunny";
+
+  // 🌧 降水確率50%以上は雨扱い
+  if (rain !== undefined && rain >= 50) {
+    icon = "🌧️";
+    weatherType = "rain";
+  }
+  else if (code >= 51) {
+    icon = "🌧️";
+    weatherType = "rain";
+  }
+  else if (code >= 1 && code <= 3) {
+    icon = "⛅";
+    weatherType = "mixed";
+  }
+  else if (code >= 45 && code <= 48) {
+    icon = "☁️";
+    weatherType = "mixed";
+  }
+
+  weatherMain.textContent =
+    `${icon} 最高 ${maxTemp}℃ / 最低 ${minTemp}℃ / 現在 ${currentTemp}℃`;
+
+  weatherRain.textContent =
+    rain !== undefined ? `☂️ ${rain}%` : "☂️ 未取得";
+
+  setBackground(weatherType);
+}
+
+fetchWeather();
+setInterval(fetchWeather, 30 * 60 * 1000);
+</script>
+</body>
+</html>
