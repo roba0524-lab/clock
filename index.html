@@ -24,14 +24,12 @@ body {
   overflow: hidden;
 }
 
+/* ===== 全体 ===== */
 .container {
   min-height: 100vh;
   display: flex;
   flex-direction: column;
   align-items: center;
-  justify-content: center;
-  text-align: center;
-  gap: 14px;
   animation: burnin 180s infinite alternate ease-in-out;
 }
 
@@ -41,25 +39,41 @@ body {
   to   { transform: translate(10px,8px); }
 }
 
-/* ⏰ 時刻（10%小さく調整） */
+/* ===== ⏰ 時刻エリア ===== */
+.time-area {
+  flex: 0 0 auto;
+  margin-top: 8vh;          /* ← 上のはみ出し対策の核心 */
+  text-align: center;
+}
+
 .hour,
 .minute {
   font-family: "Orbitron", sans-serif;
   font-weight: 900;
-  font-size: 55vw;     /* ← 78vw → 70vw */
+  font-size: 55vw;          /* ← あなたの指定そのまま */
   line-height: 0.9;
   letter-spacing: -0.04em;
 }
 
 .minute {
-  margin-top: -6vw;    /* Apple Watch感 */
+  margin-top: -6vw;         /* Apple Watch感 */
+}
+
+/* ===== 情報エリア ===== */
+.info-area {
+  flex: 1;
+  width: 100%;
+  margin-top: 2vh;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  text-align: center;
 }
 
 /* 📅 日付 */
 .date {
   font-size: 6vw;
   font-weight: 600;
-  margin-top: 2vh;
 }
 
 /* 🌤 天気アイコン */
@@ -79,15 +93,21 @@ body {
 
 <body>
 <div class="container">
-  <div id="hour" class="hour">--</div>
-  <div id="minute" class="minute">--</div>
 
-  <div id="date" class="date">--</div>
+  <!-- ⏰ 時刻 -->
+  <div class="time-area">
+    <div id="hour" class="hour">--</div>
+    <div id="minute" class="minute">--</div>
+  </div>
 
-  <div id="weatherIcon" class="weather-icon">--</div>
+  <!-- ℹ️ 情報 -->
+  <div class="info-area">
+    <div id="date" class="date">--</div>
+    <div id="weatherIcon" class="weather-icon">--</div>
+    <div id="temp" class="temp">--℃ / --℃（--℃）</div>
+    <div id="rain" class="rain">☂️ --%</div>
+  </div>
 
-  <div id="temp" class="temp">--℃ / --℃（--℃）</div>
-  <div id="rain" class="rain">☂️ --%</div>
 </div>
 
 <script>
@@ -151,5 +171,3 @@ setInterval(fetchWeather, 30 * 60 * 1000);
 </script>
 </body>
 </html>
-
-
