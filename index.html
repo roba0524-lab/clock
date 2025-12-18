@@ -1,8 +1,8 @@
 <!DOCTYPE html>
 <html lang="ja">
 <head>
-<meta charset="UTF-8">
-<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
 <title>Weather Clock</title>
 
 <!-- Azedo系フォント -->
@@ -13,7 +13,7 @@
 <style>
 :root {
   --bg: rgb(51,123,204);
-  --text: #fff;
+  --text: #ffffff;
 }
 
 body {
@@ -24,10 +24,14 @@ body {
   overflow: hidden;
 }
 
-/* 全体 */
 .container {
   min-height: 100vh;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
   text-align: center;
+  gap: 12px;
   animation: burnin 180s infinite alternate ease-in-out;
 }
 
@@ -37,54 +41,47 @@ body {
   to   { transform: translate(10px,8px); }
 }
 
-/* ===== 時刻ブロック ===== */
-.time-block {
-  margin-top: 4vh;     /* ← ここで全体の上下位置を制御 */
+/* ⏰ 時刻ブロック */
+.time {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
 }
 
-.hour,
-.minute {
+.digits {
+  display: flex;
+}
+
+/* 数字 */
+.digit {
   font-family: "Orbitron", sans-serif;
   font-weight: 900;
   font-size: 55vw;
   line-height: 0.9;
-  letter-spacing: -0.04em;
 }
 
-.minute {
-  margin-top: -6vw;
+/* デフォルトの間 */
+.digit + .digit {
+  margin-left: -0.02em;
 }
 
-/* ===== 情報ブロック ===== */
-.info-block {
-  margin-top: 2vh;     /* 時刻との距離 */
-}
-
+/* 📅 日付 */
 .date {
   font-size: 6vw;
   font-weight: 600;
-  margin-bottom: 1.5vh;
+  margin-top: 1vh;
 }
 
+/* 🌤 天気 */
 .weather-icon {
   font-size: 16vw;
-  margin-bottom: 1vh;
+  margin-top: 1vh;
 }
 
-/* 気温・降水確率を詰める */
 .temp,
 .rain {
   font-size: 6.5vw;
   font-weight: 700;
-  line-height: 1.2;
-}
-
-.temp {
-  margin-top: -1vh;    /* ← ここで1行分くらい詰める */
-}
-
-.rain {
-  margin-top: 0.5vh;
 }
 </style>
 </head>
@@ -92,37 +89,69 @@ body {
 <body>
 <div class="container">
 
-  <!-- 時刻 -->
-  <div class="time-block">
-    <div id="hour" class="hour">--</div>
-    <div id="minute" class="minute">--</div>
+  <div class="time">
+    <div id="hour" class="digits"></div>
+    <div id="minute" class="digits"></div>
   </div>
 
-  <!-- 情報 -->
-  <div class="info-block">
-    <div id="date" class="date">--</div>
-    <div id="weatherIcon" class="weather-icon">--</div>
-    <div id="temp" class="temp">--℃ / --℃（--℃）</div>
-    <div id="rain" class="rain">☂️ --%</div>
-  </div>
+  <div id="date" class="date">--</div>
+
+  <div id="weatherIcon" class="weather-icon">--</div>
+  <div id="temp" class="temp">--℃ / --℃（--℃）</div>
+  <div id="rain" class="rain">☂️ --%</div>
 
 </div>
 
 <script>
-// ===== 時刻 =====
+// =====================
+// ⏰ 時刻＋カーニング
+// =====================
+function renderDigits(el, value) {
+  el.innerHTML = "";
+
+  const a = value[0];
+  const b = value[1];
+
+  const spanA = document.createElement("span");
+  const spanB = document.createElement("span");
+  spanA.className = "digit";
+  spanB.className = "digit";
+  spanA.textContent = a;
+  spanB.textContent = b;
+
+  // 👇 カーニング調整
+  let gap = "-0.02em"; // default
+
+  if (a === "1") gap = "0.08em";           // 1系は離す
+  if (a === "8" && b === "8") gap = "-0.08em"; // 88は詰める
+  if (a === "0" && b === "0") gap = "-0.05em";
+
+  spanB.style.marginLeft = gap;
+
+  el.appendChild(spanA);
+  el.appendChild(spanB);
+}
+
 function updateTime() {
   const now = new Date();
-  hour.textContent = String(now.getHours()).padStart(2,"0");
-  minute.textContent = String(now.getMinutes()).padStart(2,"0");
+
+  const h = String(now.getHours()).padStart(2,"0");
+  const m = String(now.getMinutes()).padStart(2,"0");
+
+  renderDigits(hour, h);
+  renderDigits(minute, m);
 
   const w = ["日","月","火","水","木","金","土"];
   date.textContent =
     `${now.getMonth()+1}月${now.getDate()}日（${w[now.getDay()]}）`;
 }
+
 updateTime();
 setInterval(updateTime, 60000);
 
-// ===== 天気 =====
+// =====================
+// 🌤 天気
+// =====================
 async function fetchWeather() {
   const url =
     "https://api.open-meteo.com/v1/forecast" +
@@ -148,16 +177,6 @@ async function fetchWeather() {
   weatherIcon.textContent = icon;
   temp.textContent = `${max}℃ / ${min}℃（${nowTemp}℃）`;
   rain.textContent = rainVal !== undefined ? `☂️ ${rainVal}%` : "☂️ 未取得";
-
-  // 背景色
-  const h = new Date().getHours();
-  let bg;
-  if (h >= 18) bg = "#0b1d3a";
-  else if (rainVal >= 50) bg = "#888";
-  else if (icon === "☀️") bg = "#f59a00";
-  else bg = "rgb(51,123,204)";
-
-  document.documentElement.style.setProperty("--bg", bg);
 }
 
 fetchWeather();
