@@ -6,67 +6,156 @@
 <title>Weather Clock</title>
 
 <style>
-  :root {
-    --bg: #f59a00;
-    --text: #ffffff;
-  }
+:root {
+  --bg: rgb(51,123,204);
+  --text: #fff;
+}
 
-  body {
-    margin: 0;
-    background: var(--bg);
-    color: var(--text);
-    font-family:
-      -apple-system,
-      BlinkMacSystemFont,
-      "SF Pro Display",
-      "Helvetica Neue",
-      Arial,
-      sans-serif;
-  }
+body {
+  margin: 0;
+  background: var(--bg);
+  color: var(--text);
+  font-family:
+    -apple-system,
+    BlinkMacSystemFont,
+    "SF Pro Display",
+    "Helvetica Neue",
+    Arial,
+    sans-serif;
+}
 
-  .container {
-    min-height: 100vh;
-    display: flex;
-    flex-direction: column;
-    align-items: center;
-    justify-content: center;
-    gap: 26px;
-    text-align: center;
-  }
+.container {
+  min-height: 100vh;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  text-align: center;
+  gap: 24px;
+  animation: burnin 180s infinite alternate ease-in-out;
+}
 
-  /* 時刻 */
-  .time {
-    font-weight: 800;
-    line-height: 1;
-  }
+/* 焼き付き防止 */
+@keyframes burnin {
+  from { transform: translate(0,0); }
+  to   { transform: translate(10px,8px); }
+}
 
-  .hour {
-    font-size: clamp(130px, 32vw, 230px);
-  }
+/* 時刻 */
+.hour {
+  font-size: clamp(140px, 34vw, 240px);
+  font-weight: 900;
+  line-height: 1;
+}
+.minute {
+  font-size: clamp(120px, 30vw, 210px);
+  font-weight: 900;
+  line-height: 1;
+  margin-top: -10px;
+}
 
-  .minute {
-    font-size: clamp(110px, 28vw, 200px);
-    margin-top: 6px; /* ← 認知分離の肝 */
-  }
+/* 日付 */
+.date {
+  font-size: clamp(22px, 4vw, 34px);
+  font-weight: 600;
+}
 
-  /* 日付 */
-  .date {
-    font-size: clamp(20px, 4vw, 32px);
-    font-weight: 600;
-    margin-top: -10px;
-  }
+/* 天気 */
+.weather-icon {
+  font-size: clamp(48px, 8vw, 80px);
+}
 
-  /* 天気 */
-  .weather-icon {
-    font-size: clamp(44px, 8vw, 76px);
-  }
+.temp {
+  font-size: clamp(26px, 5vw, 40px);
+  font-weight: 700;
+}
 
-  /* 気温 */
-  .temperature {
-    font-size: clamp(26px, 5vw, 38px);
-    font-weight: 700;
-  }
+.rain {
+  font-size: clamp(24px, 5vw, 38px);
+  font-weight: 600;
+}
+</style>
+</head>
 
-  /* 降水確率 */
-  .rain {
-    font-size: cla
+<body>
+<div class="container">
+  <div id="hour" class="hour">--</div>
+  <div id="minute" class="minute">--</div>
+
+  <div id="date" class="date">--</div>
+
+  <div id="weatherIcon" class="weather-icon">--</div>
+
+  <div id="temp" class="temp">--℃ / --℃（--℃）</div>
+
+  <div id="rain" class="rain">☂️ --%</div>
+</div>
+
+<script>
+// =====================
+// 時刻・日付
+// =====================
+function updateTime() {
+  const now = new Date();
+  hour.textContent = String(now.getHours()).padStart(2,"0");
+  minute.textContent = String(now.getMinutes()).padStart(2,"0");
+
+  const w = ["日","月","火","水","木","金","土"];
+  date.textContent =
+    `${now.getMonth()+1}月${now.getDate()}日（${w[now.getDay()]}）`;
+
+  return now.getHours();
+}
+updateTime();
+setInterval(updateTime, 60000);
+
+// =====================
+// 天気取得
+// =====================
+async function fetchWeather() {
+  const url =
+    "https://api.open-meteo.com/v1/forecast" +
+    "?latitude=34.612&longitude=135.734" +
+    "&current=temperature_2m" +
+    "&daily=temperature_2m_max,temperature_2m_min,precipitation_probability_max,weather_code" +
+    "&timezone=Asia%2FTokyo";
+
+  const res = await fetch(url);
+  const data = await res.json();
+
+  const max = Math.round(data.daily.temperature_2m_max[0]);
+  const min = Math.round(data.daily.temperature_2m_min[0]);
+  const nowTemp = Math.round(data.current.temperature_2m);
+  const rain = data.daily.precipitation_probability_max[0];
+  const code = data.daily.weather_code[0];
+
+  // 天気アイコン
+  let icon = "☀️";
+  if (code >= 1 && code <= 3) icon = "⛅";
+  else if (code >= 45) icon = "☁️";
+  if (rain >= 50) icon = "🌧️";
+
+  weatherIcon.textContent = icon;
+  temp.textContent = `${max}℃ / ${min}℃（${nowTemp}℃）`;
+  rain
+    ? rainElem.textContent = `☂️ ${rain}%`
+    : rainElem.textContent = "☂️ 未取得";
+
+  // 背景色判定
+  const hourNow = new Date().getHours();
+  let bg;
+
+  if (hourNow >= 18) bg = "#0b1d3a";
+  else if (rain >= 50) bg = "#888";
+  else if (icon === "☀️") bg = "#f59a00";
+  else bg = "rgb(51,123,204)";
+
+  document.documentElement.style.setProperty("--bg", bg);
+}
+
+const rainElem = document.getElementById("rain");
+fetchWeather();
+setInterval(fetchWeather, 30 * 60 * 1000);
+</script>
+</body>
+</html>
