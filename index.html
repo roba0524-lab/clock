@@ -5,7 +5,7 @@
 <meta name="viewport" content="width=device-width, initial-scale=1.0" />
 <title>Weather Clock</title>
 
-<!-- Azedo系フォント -->
+<!-- Google Font（Azedo系） -->
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link href="https://fonts.googleapis.com/css2?family=Orbitron:wght@700;900&display=swap" rel="stylesheet">
@@ -29,123 +29,91 @@ body {
   display: flex;
   flex-direction: column;
   align-items: center;
-  justify-content: center;
+  justify-content: flex-start;
   text-align: center;
-  gap: 12px;
+  padding-top: 6vh;
   animation: burnin 180s infinite alternate ease-in-out;
 }
 
-/* 焼き付き防止 */
+/* 🔥 焼き付き防止 */
 @keyframes burnin {
   from { transform: translate(0,0); }
   to   { transform: translate(10px,8px); }
 }
 
-/* ⏰ 時刻ブロック */
-.time {
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-}
-
-.digits {
-  display: flex;
-}
-
-/* 数字 */
-.digit {
+/* ⏰ 時刻 */
+.hour,
+.minute {
   font-family: "Orbitron", sans-serif;
   font-weight: 900;
   font-size: 55vw;
   line-height: 0.9;
+  letter-spacing: -0.04em;
 }
 
-/* デフォルトの間 */
-.digit + .digit {
-  margin-left: -0.02em;
+.minute {
+  margin-top: -4vw;
 }
 
 /* 📅 日付 */
 .date {
   font-size: 6vw;
   font-weight: 600;
-  margin-top: 1vh;
+  margin-top: 2vh;
+  margin-bottom: 2vh; /* ← 日付1行分くらい */
 }
 
-/* 🌤 天気 */
+/* 🌤 天気ブロック */
+.weather {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 0.6vh; /* ← 行間をギュッと */
+}
+
+/* 天気アイコン */
 .weather-icon {
   font-size: 16vw;
-  margin-top: 1vh;
+  line-height: 1;
 }
 
+/* 気温・降水確率 */
 .temp,
 .rain {
   font-size: 6.5vw;
   font-weight: 700;
+  line-height: 1.1;
 }
 </style>
 </head>
 
 <body>
 <div class="container">
-
-  <div class="time">
-    <div id="hour" class="digits"></div>
-    <div id="minute" class="digits"></div>
-  </div>
+  <div id="hour" class="hour">--</div>
+  <div id="minute" class="minute">--</div>
 
   <div id="date" class="date">--</div>
 
-  <div id="weatherIcon" class="weather-icon">--</div>
-  <div id="temp" class="temp">--℃ / --℃（--℃）</div>
-  <div id="rain" class="rain">☂️ --%</div>
-
+  <div class="weather">
+    <div id="weatherIcon" class="weather-icon">--</div>
+    <div id="temp" class="temp">--℃ / --℃（--℃）</div>
+    <div id="rain" class="rain">☂️ --%</div>
+  </div>
 </div>
 
 <script>
 // =====================
-// ⏰ 時刻＋カーニング
+// ⏰ 時刻
 // =====================
-function renderDigits(el, value) {
-  el.innerHTML = "";
-
-  const a = value[0];
-  const b = value[1];
-
-  const spanA = document.createElement("span");
-  const spanB = document.createElement("span");
-  spanA.className = "digit";
-  spanB.className = "digit";
-  spanA.textContent = a;
-  spanB.textContent = b;
-
-  // 👇 カーニング調整
-  let gap = "-0.02em"; // default
-
-  if (a === "1") gap = "0.08em";           // 1系は離す
-  if (a === "8" && b === "8") gap = "-0.08em"; // 88は詰める
-  if (a === "0" && b === "0") gap = "-0.05em";
-
-  spanB.style.marginLeft = gap;
-
-  el.appendChild(spanA);
-  el.appendChild(spanB);
-}
-
 function updateTime() {
   const now = new Date();
-
-  const h = String(now.getHours()).padStart(2,"0");
-  const m = String(now.getMinutes()).padStart(2,"0");
-
-  renderDigits(hour, h);
-  renderDigits(minute, m);
+  hour.textContent = String(now.getHours()).padStart(2,"0");
+  minute.textContent = String(now.getMinutes()).padStart(2,"0");
 
   const w = ["日","月","火","水","木","金","土"];
   date.textContent =
     `${now.getMonth()+1}月${now.getDate()}日（${w[now.getDay()]}）`;
 }
-
 updateTime();
 setInterval(updateTime, 60000);
 
@@ -177,6 +145,16 @@ async function fetchWeather() {
   weatherIcon.textContent = icon;
   temp.textContent = `${max}℃ / ${min}℃（${nowTemp}℃）`;
   rain.textContent = rainVal !== undefined ? `☂️ ${rainVal}%` : "☂️ 未取得";
+
+  // 🎨 背景色
+  const h = new Date().getHours();
+  let bg;
+  if (h >= 18) bg = "#0b1d3a";
+  else if (rainVal >= 50) bg = "#888";
+  else if (icon === "☀️") bg = "#f59a00";
+  else bg = "rgb(51,123,204)";
+
+  document.documentElement.style.setProperty("--bg", bg);
 }
 
 fetchWeather();
