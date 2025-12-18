@@ -5,23 +5,22 @@
 <meta name="viewport" content="width=device-width, initial-scale=1.0" />
 <title>Weather Clock</title>
 
+<!-- Google Font -->
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Rubik+Mono+One&display=swap" rel="stylesheet">
+
 <style>
 :root {
   --bg: rgb(51,123,204);
-  --text: #fff;
+  --text: #ffffff;
 }
 
 body {
   margin: 0;
   background: var(--bg);
   color: var(--text);
-  font-family:
-    -apple-system,
-    BlinkMacSystemFont,
-    "SF Pro Display",
-    "Helvetica Neue",
-    Arial,
-    sans-serif;
+  font-family: -apple-system, BlinkMacSystemFont, sans-serif;
 }
 
 .container {
@@ -31,7 +30,7 @@ body {
   align-items: center;
   justify-content: center;
   text-align: center;
-  gap: 24px;
+  gap: 16px;
   animation: burnin 180s infinite alternate ease-in-out;
 }
 
@@ -41,38 +40,36 @@ body {
   to   { transform: translate(10px,8px); }
 }
 
-/* 時刻 */
-.hour {
-  font-size: clamp(140px, 34vw, 240px);
-  font-weight: 900;
-  line-height: 1;
-}
+/* ⏰ 時刻（iPhone8Plus最適化） */
+.hour,
 .minute {
-  font-size: clamp(120px, 30vw, 210px);
-  font-weight: 900;
-  line-height: 1;
-  margin-top: -10px;
+  font-family: "Rubik Mono One", sans-serif;
+  font-size: 78vw;     /* ← バカデカ調整 */
+  line-height: 0.9;
 }
 
-/* 日付 */
+.minute {
+  margin-top: -6vw;    /* Apple Watch感 */
+}
+
+/* 📅 日付 */
 .date {
-  font-size: clamp(22px, 4vw, 34px);
+  font-size: 6vw;      /* 約1.5倍 */
   font-weight: 600;
+  margin-top: 2vh;
 }
 
-/* 天気 */
+/* 🌤 天気 */
 .weather-icon {
-  font-size: clamp(48px, 8vw, 80px);
+  font-size: 16vw;     /* 約2倍 */
+  margin-top: 2vh;
 }
 
-.temp {
-  font-size: clamp(26px, 5vw, 40px);
-  font-weight: 700;
-}
-
+/* 🌡 気温・降水確率（w60px / h90px相当） */
+.temp,
 .rain {
-  font-size: clamp(24px, 5vw, 38px);
-  font-weight: 600;
+  font-size: 6.5vw;
+  font-weight: 700;
 }
 </style>
 </head>
@@ -87,13 +84,12 @@ body {
   <div id="weatherIcon" class="weather-icon">--</div>
 
   <div id="temp" class="temp">--℃ / --℃（--℃）</div>
-
   <div id="rain" class="rain">☂️ --%</div>
 </div>
 
 <script>
 // =====================
-// 時刻・日付
+// 時刻
 // =====================
 function updateTime() {
   const now = new Date();
@@ -110,7 +106,7 @@ updateTime();
 setInterval(updateTime, 60000);
 
 // =====================
-// 天気取得
+// 天気
 // =====================
 async function fetchWeather() {
   const url =
@@ -126,34 +122,29 @@ async function fetchWeather() {
   const max = Math.round(data.daily.temperature_2m_max[0]);
   const min = Math.round(data.daily.temperature_2m_min[0]);
   const nowTemp = Math.round(data.current.temperature_2m);
-  const rain = data.daily.precipitation_probability_max[0];
+  const rainVal = data.daily.precipitation_probability_max[0];
   const code = data.daily.weather_code[0];
 
-  // 天気アイコン
   let icon = "☀️";
   if (code >= 1 && code <= 3) icon = "⛅";
   else if (code >= 45) icon = "☁️";
-  if (rain >= 50) icon = "🌧️";
+  if (rainVal >= 50) icon = "🌧️";
 
   weatherIcon.textContent = icon;
   temp.textContent = `${max}℃ / ${min}℃（${nowTemp}℃）`;
-  rain
-    ? rainElem.textContent = `☂️ ${rain}%`
-    : rainElem.textContent = "☂️ 未取得";
+  rain.textContent = rainVal !== undefined ? `☂️ ${rainVal}%` : "☂️ 未取得";
 
-  // 背景色判定
-  const hourNow = new Date().getHours();
+  // 背景色
+  const h = new Date().getHours();
   let bg;
-
-  if (hourNow >= 18) bg = "#0b1d3a";
-  else if (rain >= 50) bg = "#888";
+  if (h >= 18) bg = "#0b1d3a";
+  else if (rainVal >= 50) bg = "#888";
   else if (icon === "☀️") bg = "#f59a00";
   else bg = "rgb(51,123,204)";
 
   document.documentElement.style.setProperty("--bg", bg);
 }
 
-const rainElem = document.getElementById("rain");
 fetchWeather();
 setInterval(fetchWeather, 30 * 60 * 1000);
 </script>
