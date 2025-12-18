@@ -1,11 +1,10 @@
 <!DOCTYPE html>
 <html lang="ja">
 <head>
-<meta charset="UTF-8">
-<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
 <title>Weather Clock</title>
 
-<!-- Azedo系フォント -->
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link href="https://fonts.googleapis.com/css2?family=Orbitron:wght@700;900&display=swap" rel="stylesheet">
@@ -13,15 +12,15 @@
 <style>
 :root {
   --bg: rgb(51,123,204);
-  --text: #fff;
+  --text: #ffffff;
 }
 
 body {
   margin: 0;
   background: var(--bg);
   color: var(--text);
-  font-family: -apple-system, BlinkMacSystemFont, sans-serif;
   overflow: hidden;
+  font-family: -apple-system, BlinkMacSystemFont, sans-serif;
 }
 
 .container {
@@ -33,52 +32,50 @@ body {
   animation: burnin 180s infinite alternate ease-in-out;
 }
 
-/* 焼き付き防止 */
+/* 🔥 焼き付き防止 */
 @keyframes burnin {
   from { transform: translate(0,0); }
   to   { transform: translate(8px,6px); }
 }
 
-/* ===== 時刻 ===== */
-.time {
+/* ===== 時刻ブロック ===== */
+.time-box {
+  width: 100vw;
+  height: 38vh;              /* ← 枠の高さ固定 */
   display: flex;
-  flex-direction: column;
+  justify-content: center;
   align-items: center;
-  margin-top: -4vh; /* 上詰め微調整 */
 }
 
-.hour,
-.minute {
+.time-text {
   font-family: "Orbitron", sans-serif;
   font-weight: 900;
   font-size: 55vw;
-  line-height: 0.9;
+  line-height: 1;
   letter-spacing: -0.04em;
+  text-align: center;
 }
 
-/* 1と4のカーニングを広げる */
-.wide-kern {
-  letter-spacing: 0.08em;
-}
-
-.minute {
-  margin-top: -5vw;
+/* 分は少し詰める */
+.minute-box {
+  height: 32vh;
+  margin-top: -6vh;
 }
 
 /* ===== 日付 ===== */
 .date {
   font-size: 6vw;
   font-weight: 600;
-  margin-top: 6px;
-  margin-bottom: 3px; /* ← 日付〜下を3px */
+  margin-top: 3px;
+  margin-bottom: 3px;
 }
 
-/* ===== 天気ブロック ===== */
+/* ===== 天気 ===== */
 .weather {
   display: flex;
   flex-direction: column;
   align-items: center;
-  gap: 3px; /* ← 全行間3px固定 */
+  gap: 3px; /* ← 日付から下、全部3px基準 */
 }
 
 .weather-icon {
@@ -96,9 +93,14 @@ body {
 <body>
 <div class="container">
 
-  <div class="time">
-    <div id="hour" class="hour">--</div>
-    <div id="minute" class="minute">--</div>
+  <!-- 時 -->
+  <div class="time-box">
+    <div id="hour" class="time-text">--</div>
+  </div>
+
+  <!-- 分 -->
+  <div class="time-box minute-box">
+    <div id="minute" class="time-text">--</div>
   </div>
 
   <div id="date" class="date">--</div>
@@ -108,24 +110,14 @@ body {
     <div id="temp" class="temp">--℃ / --℃（--℃）</div>
     <div id="rain" class="rain">☂️ --%</div>
   </div>
-
 </div>
 
 <script>
 // ===== 時刻 =====
 function updateTime() {
   const now = new Date();
-  const h = String(now.getHours()).padStart(2,"0");
-  const m = String(now.getMinutes()).padStart(2,"0");
-
-  hour.textContent = h;
-  minute.textContent = m;
-
-  // 1と4のカーニング制御
-  hour.classList.remove("wide-kern");
-  if (h.includes("14")) {
-    hour.classList.add("wide-kern");
-  }
+  hour.textContent = String(now.getHours()).padStart(2,"0");
+  minute.textContent = String(now.getMinutes()).padStart(2,"0");
 
   const w = ["日","月","火","水","木","金","土"];
   date.textContent =
@@ -161,10 +153,9 @@ async function fetchWeather() {
   temp.textContent = `${max}℃ / ${min}℃（${nowTemp}℃）`;
   rain.textContent = rainVal !== undefined ? `☂️ ${rainVal}%` : "☂️ 未取得";
 
-  // 背景色
-  const hourNow = new Date().getHours();
+  const h = new Date().getHours();
   let bg;
-  if (hourNow >= 18) bg = "#0b1d3a";
+  if (h >= 18) bg = "#0b1d3a";
   else if (rainVal >= 50) bg = "#888";
   else if (icon === "☀️") bg = "#f59a00";
   else bg = "rgb(51,123,204)";
