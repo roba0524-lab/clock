@@ -11,10 +11,6 @@
     --text: #ffffff;
   }
 
-  * {
-    box-sizing: border-box;
-  }
-
   body {
     margin: 0;
     background: var(--bg);
@@ -34,19 +30,23 @@
     flex-direction: column;
     align-items: center;
     justify-content: center;
-    gap: 24px;
+    gap: 26px;
     text-align: center;
   }
 
   /* 時刻 */
   .time {
     font-weight: 800;
-    line-height: 0.9;
+    line-height: 1;
   }
 
-  .hour,
+  .hour {
+    font-size: clamp(130px, 32vw, 230px);
+  }
+
   .minute {
-    font-size: clamp(120px, 30vw, 220px);
+    font-size: clamp(110px, 28vw, 200px);
+    margin-top: 6px; /* ← 認知分離の肝 */
   }
 
   /* 日付 */
@@ -58,53 +58,15 @@
 
   /* 天気 */
   .weather-icon {
-    font-size: clamp(40px, 8vw, 72px);
-    line-height: 1;
+    font-size: clamp(44px, 8vw, 76px);
   }
 
   /* 気温 */
   .temperature {
-    font-size: clamp(24px, 5vw, 36px);
+    font-size: clamp(26px, 5vw, 38px);
     font-weight: 700;
   }
 
   /* 降水確率 */
   .rain {
-    font-size: clamp(22px, 5vw, 34px);
-    font-weight: 600;
-    display: flex;
-    align-items: center;
-    gap: 12px;
-  }
-</style>
-</head>
-
-<body>
-  <div class="container">
-
-    <!-- 時刻 -->
-    <div class="time">
-      <div class="hour">18</div>
-      <div class="minute">30</div>
-    </div>
-
-    <!-- 日付 -->
-    <div class="date">12月18日（木）</div>
-
-    <!-- 天気アイコン -->
-    <div class="weather-icon">🌤</div>
-
-    <!-- 気温 -->
-    <div class="temperature">
-      11℃ / 3℃（5℃）
-    </div>
-
-    <!-- 降水確率 -->
-    <div class="rain">
-      <span>☂️</span>
-      <span>20%</span>
-    </div>
-
-  </div>
-</body>
-</html>
+    font-size: cla
