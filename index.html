@@ -30,21 +30,23 @@ body {
   align-items: center;
   justify-content: center;
   animation: burnin 180s infinite alternate ease-in-out;
+  position: relative;
 }
 
-/* 🔥 焼き付き防止 */
+/* 焼き付き防止 */
 @keyframes burnin {
   from { transform: translate(0,0); }
-  to   { transform: translate(8px,6px); }
+  to { transform: translate(8px,6px); }
 }
 
-/* ===== 時刻ブロック ===== */
+/* ===== 時刻 ===== */
 .time-box {
   width: 100vw;
   height: 38vh;
   display: flex;
   justify-content: center;
   align-items: center;
+  position: relative;
 }
 
 .time-text {
@@ -56,22 +58,29 @@ body {
   text-align: center;
 }
 
-/* 分は少し詰める */
+/* 分 */
 .minute-box {
   height: 32vh;
   margin-top: -6vh;
-  position: relative; /* ← ドット配置用 */
+}
+
+/* 分切り替えアニメ */
+.flip {
+  animation: flip 0.35s ease-out;
+}
+
+@keyframes flip {
+  0%   { transform: rotateX(0deg); }
+  50%  { transform: rotateX(90deg); }
+  100% { transform: rotateX(0deg); }
 }
 
 /* 秒ドット */
-.blink-dot {
+#sec-dot {
   position: absolute;
-  right: 18vw;   /* 分の右端基準 */
-  bottom: 6vh;   /* 分の下側 */
-  width: 1.8vw;
-  height: 1.8vw;
-  border-radius: 50%;
-  background: currentColor;
+  right: 18vw;
+  bottom: 6vh;
+  font-size: 3vw;
   opacity: 0;
   transition: opacity 0.15s linear;
 }
@@ -80,8 +89,7 @@ body {
 .date {
   font-size: 6vw;
   font-weight: 600;
-  margin-top: 3px;
-  margin-bottom: 3px;
+  margin: 3px 0;
 }
 
 /* ===== 天気 ===== */
@@ -92,8 +100,14 @@ body {
   gap: 3px;
 }
 
-.weather-icon { font-size: 16vw; }
-.temp, .rain { font-size: 6.5vw; font-weight: 700; }
+.weather-icon {
+  font-size: 16vw;
+}
+
+.temp, .rain {
+  font-size: 6.5vw;
+  font-weight: 700;
+}
 </style>
 </head>
 
@@ -108,7 +122,7 @@ body {
   <!-- 分 -->
   <div class="time-box minute-box">
     <div id="minute" class="time-text">--</div>
-    <div id="dot" class="blink-dot"></div>
+    <div id="sec-dot">•</div>
   </div>
 
   <div id="date" class="date">--</div>
@@ -118,36 +132,46 @@ body {
     <div id="temp" class="temp">--℃ / --℃（--℃）</div>
     <div id="rain" class="rain">☂️ --%</div>
   </div>
+
 </div>
 
 <script>
 /* ===== 時刻 ===== */
+let lastMinute = null;
+
 function updateTime() {
   const now = new Date();
-  hour.textContent   = String(now.getHours()).padStart(2,"0");
-  minute.textContent = String(now.getMinutes()).padStart(2,"0");
+
+  const h = String(now.getHours()).padStart(2,"0");
+  const m = String(now.getMinutes()).padStart(2,"0");
+
+  hour.textContent = h;
+
+  if (m !== lastMinute) {
+    minute.classList.remove("flip");
+    void minute.offsetWidth;
+    minute.classList.add("flip");
+    minute.textContent = m;
+    lastMinute = m;
+  }
 
   const w = ["日","月","火","水","木","金","土"];
   date.textContent = `${now.getMonth()+1}月${now.getDate()}日（${w[now.getDay()]}）`;
-}
-updateTime();
-setInterval(updateTime, 60000);
 
-/* ===== 秒ドット点滅 ===== */
-setInterval(() => {
-  const s = new Date().getSeconds();
-  dot.style.opacity = s % 2 === 0 ? "1" : "0";
-}, 1000);
-
-/* ===== 夜時間背景 ===== */
-function updateNightBG() {
-  const h = new Date().getHours();
-  if (h >= 18 || h < 5) {
+  /* 夜背景 */
+  const hourNum = now.getHours();
+  if (hourNum >= 18 || hourNum < 5) {
     document.documentElement.style.setProperty("--bg", "#0b1d3a");
   }
 }
-updateNightBG();
-setInterval(updateNightBG, 60000);
+
+updateTime();
+setInterval(updateTime, 1000);
+
+/* 秒ドット点滅 */
+setInterval(() => {
+  secDot.style.opacity = secDot.style.opacity === "1" ? "0" : "1";
+}, 1000);
 
 /* ===== 天気 ===== */
 async function fetchWeather() {
@@ -176,6 +200,7 @@ async function fetchWeather() {
   temp.textContent = `${max}℃ / ${min}℃（${nowTemp}℃）`;
   rain.textContent = rainVal !== undefined ? `☂️ ${rainVal}%` : "☂️ 未取得";
 }
+
 fetchWeather();
 setInterval(fetchWeather, 30 * 60 * 1000);
 </script>
