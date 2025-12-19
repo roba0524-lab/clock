@@ -1,11 +1,10 @@
 <!DOCTYPE html>
 <html lang="ja">
 <head>
-<meta charset="UTF-8">
-<meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>置時計＋天気</title>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<title>Weather Clock</title>
 
-<!-- Google Font -->
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link href="https://fonts.googleapis.com/css2?family=Orbitron:wght@700;900&display=swap" rel="stylesheet">
@@ -14,18 +13,14 @@
 :root {
   --bg: rgb(51,123,204);
   --text: #ffffff;
-
-  /* 微調整用（必要なら ±px 触る） */
-  --num-x-adjust: 0px;
-  --num-y-adjust: 0px;
 }
 
 body {
   margin: 0;
   background: var(--bg);
   color: var(--text);
-  font-family: -apple-system, BlinkMacSystemFont, sans-serif;
   overflow: hidden;
+  font-family: -apple-system, BlinkMacSystemFont, sans-serif;
 }
 
 .container {
@@ -34,58 +29,53 @@ body {
   flex-direction: column;
   align-items: center;
   justify-content: center;
+  animation: burnin 180s infinite alternate ease-in-out;
 }
 
-/* =====================
-   ⏰ 時刻ブロック
-===================== */
-.time {
-  display: flex;
-  flex-direction: column;
-  align-items: center;
+/* 🔥 焼き付き防止 */
+@keyframes burnin {
+  from { transform: translate(0,0); }
+  to   { transform: translate(8px,6px); }
 }
 
-/* □□ ← この「枠」 */
+/* ===== 時刻 ===== */
 .time-box {
-  width: 90vw;          /* ← 枠は固定 */
-  height: 32vh;         /* ← 高さも固定 */
+  width: 100vw;
+  height: 38vh;          /* ← 枠の高さ固定 */
   display: flex;
-  align-items: center;
   justify-content: center;
-  overflow: hidden;
+  align-items: center;
 }
 
-/* 数字そのもの */
-.time-num {
+.time-text {
   font-family: "Orbitron", sans-serif;
   font-weight: 900;
   font-size: 55vw;
   line-height: 1;
-  letter-spacing: 0;
-  font-variant-numeric: tabular-nums; /* ★超重要 */
-  transform:
-    translateX(var(--num-x-adjust))
-    translateY(var(--num-y-adjust));
+  letter-spacing: -0.04em;
+  text-align: center;
 }
 
-/* =====================
-   📅 日付
-===================== */
+/* 分は少し詰める */
+.minute-box {
+  height: 32vh;
+  margin-top: -6vh;
+}
+
+/* ===== 日付 ===== */
 .date {
   font-size: 6vw;
   font-weight: 600;
   margin-top: 3px;
+  margin-bottom: 3px;
 }
 
-/* =====================
-   🌤 天気
-===================== */
+/* ===== 天気 ===== */
 .weather {
   display: flex;
   flex-direction: column;
   align-items: center;
   gap: 3px;
-  margin-top: 3px;
 }
 
 .weather-icon {
@@ -97,58 +87,48 @@ body {
   font-size: 6.5vw;
   font-weight: 700;
 }
-
-/* 🔥 焼き付き防止 */
-@keyframes burnin {
-  from { transform: translate(0,0); }
-  to   { transform: translate(10px,8px); }
-}
-.container {
-  animation: burnin 180s infinite alternate ease-in-out;
-}
 </style>
 </head>
 
 <body>
 <div class="container">
 
-  <div class="time">
-    <div class="time-box">
-      <div id="hour" class="time-num">--</div>
-    </div>
-    <div class="time-box">
-      <div id="minute" class="time-num">--</div>
-    </div>
+  <!-- 時 -->
+  <div class="time-box">
+    <div id="hour" class="time-text">--</div>
   </div>
 
+  <!-- 分 -->
+  <div class="time-box minute-box">
+    <div id="minute" class="time-text">--</div>
+  </div>
+
+  <!-- 日付 -->
   <div id="date" class="date">--</div>
 
+  <!-- 天気 -->
   <div class="weather">
     <div id="weatherIcon" class="weather-icon">--</div>
-    <div id="temp" class="temp">--</div>
-    <div id="rain" class="rain">--</div>
+    <div id="temp" class="temp">--℃ / --℃（--℃）</div>
+    <div id="rain" class="rain">☂️ --%</div>
   </div>
 
 </div>
 
 <script>
-// =====================
-// ⏰ 時刻
-// =====================
+// ===== 時刻 =====
 function updateTime() {
   const now = new Date();
   hour.textContent = String(now.getHours()).padStart(2,"0");
   minute.textContent = String(now.getMinutes()).padStart(2,"0");
 
   const w = ["日","月","火","水","木","金","土"];
-  date.textContent =
-    `${now.getMonth()+1}月${now.getDate()}日（${w[now.getDay()]}）`;
+  date.textContent = `${now.getMonth()+1}月${now.getDate()}日（${w[now.getDay()]}）`;
 }
 updateTime();
 setInterval(updateTime, 60000);
 
-// =====================
-// 🌤 天気（Open-Meteo）
+// ===== 天気 =====
 async function fetchWeather() {
   const url =
     "https://api.open-meteo.com/v1/forecast" +
@@ -172,7 +152,7 @@ async function fetchWeather() {
   if (rainVal >= 50) icon = "🌧️";
 
   weatherIcon.textContent = icon;
-  temp.textContent = `最高 ${max}℃ / 最低 ${min}℃ / 現在 ${nowTemp}℃`;
+  temp.textContent = `${max}℃ / ${min}℃（${nowTemp}℃）`;
   rain.textContent = rainVal !== undefined ? `☂️ ${rainVal}%` : "☂️ 未取得";
 
   const h = new Date().getHours();
@@ -184,9 +164,9 @@ async function fetchWeather() {
 
   document.documentElement.style.setProperty("--bg", bg);
 }
-
 fetchWeather();
 setInterval(fetchWeather, 30 * 60 * 1000);
 </script>
+
 </body>
 </html>
