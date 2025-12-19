@@ -56,33 +56,33 @@ body {
   text-align: center;
 }
 
+/* 分だけ位置調整 */
 .minute-box {
   height: 32vh;
   margin-top: -6vh;
 }
 
-/* 分の一の位 */
-.minute-ones {
+/* 分を相対配置（←重要） */
+#minute {
   position: relative;
-  display: inline-block;
 }
 
 /* 秒ドット */
 .second-dot {
   position: absolute;
-  right: -10px;
-  bottom: -10px;
+  right: -10px;     /* 一の位の横 */
+  top: -10px;       /* 少し上 */
   width: 14px;
   height: 14px;
-  border-radius: 50%;
   background: white;
+  border-radius: 50%;
   opacity: 0;
-  animation: blink 1s infinite;
+  animation: blink 1s steps(1) infinite;
 }
 
 @keyframes blink {
-  0%, 50% { opacity: 1; }
-  50.01%, 100% { opacity: 0; }
+  0%   { opacity: 1; }
+  50%  { opacity: 0; }
 }
 
 /* ===== 日付 ===== */
@@ -122,11 +122,8 @@ body {
   <!-- 分 -->
   <div class="time-box minute-box">
     <div id="minute" class="time-text">
-      <span id="min10">-</span>
-      <span id="min1" class="minute-ones">
-        -
-        <span class="second-dot"></span>
-      </span>
+      --
+      <div class="second-dot"></div>
     </div>
   </div>
 
@@ -137,30 +134,25 @@ body {
     <div id="temp" class="temp">--℃ / --℃（--℃）</div>
     <div id="rain" class="rain">☂️ --%</div>
   </div>
+
 </div>
 
 <script>
 /* ===== 時刻 ===== */
 function updateTime() {
   const now = new Date();
-
-  const h = String(now.getHours()).padStart(2,"0");
-  const m = String(now.getMinutes()).padStart(2,"0");
-
-  hour.textContent = h;
-  min10.textContent = m[0];
-  min1.firstChild.textContent = m[1];
+  hour.textContent = String(now.getHours()).padStart(2,"0");
+  minute.firstChild.textContent = String(now.getMinutes()).padStart(2,"0");
 
   const w = ["日","月","火","水","木","金","土"];
   date.textContent = `${now.getMonth()+1}月${now.getDate()}日（${w[now.getDay()]}）`;
 
-  /* 夜背景 */
-  const hourNow = now.getHours();
-  if (hourNow >= 18 || hourNow < 5) {
+  // 夜時間背景
+  const h = now.getHours();
+  if (h >= 18 || h < 5) {
     document.documentElement.style.setProperty("--bg", "#0b1d3a");
   }
 }
-
 updateTime();
 setInterval(updateTime, 1000);
 
@@ -189,7 +181,7 @@ async function fetchWeather() {
 
   weatherIcon.textContent = icon;
   temp.textContent = `${max}℃ / ${min}℃（${nowTemp}℃）`;
-  rain.textContent = `☂️ ${rainVal}%`;
+  rain.textContent = rainVal !== undefined ? `☂️ ${rainVal}%` : "☂️ 未取得";
 }
 
 fetchWeather();
