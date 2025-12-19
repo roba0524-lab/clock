@@ -32,6 +32,7 @@ body {
   animation: burnin 180s infinite alternate ease-in-out;
 }
 
+/* 焼き付き防止 */
 @keyframes burnin {
   from { transform: translate(0,0); }
   to   { transform: translate(8px,6px); }
@@ -55,39 +56,33 @@ body {
   text-align: center;
 }
 
-/* 分 */
 .minute-box {
   height: 32vh;
   margin-top: -6vh;
+}
+
+/* 分の一の位 */
+.minute-ones {
   position: relative;
+  display: inline-block;
 }
 
-/* パタン */
-.flip {
-  animation: flip 0.4s ease;
-}
-
-@keyframes flip {
-  0%   { transform: rotateX(0deg); }
-  50%  { transform: rotateX(90deg); }
-  100% { transform: rotateX(0deg); }
-}
-
-/* ===== 秒ドット ===== */
-.dot {
+/* 秒ドット */
+.second-dot {
   position: absolute;
-  right: -10px;   /* ← 分の一の位から右に10px */
-  bottom: -10px;  /* ← 下に10px */
-  font-size: 5vw;
+  right: -10px;
+  bottom: -10px;
+  width: 14px;
+  height: 14px;
+  border-radius: 50%;
+  background: white;
   opacity: 0;
-}
-
-.dot.blink {
-  animation: blink 1s steps(1) infinite;
+  animation: blink 1s infinite;
 }
 
 @keyframes blink {
-  50% { opacity: 1; }
+  0%, 50% { opacity: 1; }
+  50.01%, 100% { opacity: 0; }
 }
 
 /* ===== 日付 ===== */
@@ -126,62 +121,50 @@ body {
 
   <!-- 分 -->
   <div class="time-box minute-box">
-    <div id="minute" class="time-text">--</div>
-    <div id="dot" class="dot blink">•</div>
+    <div id="minute" class="time-text">
+      <span id="min10">-</span>
+      <span id="min1" class="minute-ones">
+        -
+        <span class="second-dot"></span>
+      </span>
+    </div>
   </div>
 
-  <!-- 日付 -->
   <div id="date" class="date">--</div>
 
-  <!-- 天気 -->
   <div class="weather">
     <div id="weatherIcon" class="weather-icon">--</div>
     <div id="temp" class="temp">--℃ / --℃（--℃）</div>
     <div id="rain" class="rain">☂️ --%</div>
   </div>
-
 </div>
 
 <script>
-const hourEl = document.getElementById("hour");
-const minuteEl = document.getElementById("minute");
-const dateEl = document.getElementById("date");
-const dotEl = document.getElementById("dot");
-
-let lastMinute = null;
-
-// ===== 時刻 =====
+/* ===== 時刻 ===== */
 function updateTime() {
   const now = new Date();
 
   const h = String(now.getHours()).padStart(2,"0");
   const m = String(now.getMinutes()).padStart(2,"0");
 
-  hourEl.textContent = h;
-
-  if (m !== lastMinute) {
-    minuteEl.classList.remove("flip");
-    void minuteEl.offsetWidth;
-    minuteEl.classList.add("flip");
-    minuteEl.textContent = m;
-    lastMinute = m;
-  }
+  hour.textContent = h;
+  min10.textContent = m[0];
+  min1.firstChild.textContent = m[1];
 
   const w = ["日","月","火","水","木","金","土"];
-  dateEl.textContent = `${now.getMonth()+1}月${now.getDate()}日（${w[now.getDay()]}）`;
+  date.textContent = `${now.getMonth()+1}月${now.getDate()}日（${w[now.getDay()]}）`;
 
-  /* 夜時間 */
-  let bg;
-  if (now.getHours() >= 18 || now.getHours() < 5) {
-    bg = "#0b1d3a";
+  /* 夜背景 */
+  const hourNow = now.getHours();
+  if (hourNow >= 18 || hourNow < 5) {
+    document.documentElement.style.setProperty("--bg", "#0b1d3a");
   }
-  document.documentElement.style.setProperty("--bg", bg ?? "rgb(51,123,204)");
 }
 
 updateTime();
 setInterval(updateTime, 1000);
 
-// ===== 天気 =====
+/* ===== 天気 ===== */
 async function fetchWeather() {
   const url =
     "https://api.open-meteo.com/v1/forecast" +
