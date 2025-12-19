@@ -5,7 +5,6 @@
 <meta name="viewport" content="width=device-width, initial-scale=1.0" />
 <title>Weather Clock</title>
 
-<!-- Google Font（Azedo系） -->
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link href="https://fonts.googleapis.com/css2?family=Orbitron:wght@700;900&display=swap" rel="stylesheet">
@@ -20,8 +19,8 @@ body {
   margin: 0;
   background: var(--bg);
   color: var(--text);
-  font-family: -apple-system, BlinkMacSystemFont, sans-serif;
   overflow: hidden;
+  font-family: -apple-system, BlinkMacSystemFont, sans-serif;
 }
 
 .container {
@@ -30,7 +29,6 @@ body {
   flex-direction: column;
   align-items: center;
   justify-content: center;
-  text-align: center;
   animation: burnin 180s infinite alternate ease-in-out;
 }
 
@@ -40,58 +38,60 @@ body {
   to   { transform: translate(10px,8px); }
 }
 
-/* =====================
+/* ======================
    ⏰ 時刻ブロック
-===================== */
+====================== */
 .time-block {
   display: flex;
   flex-direction: column;
   align-items: center;
+  margin-bottom: 4.2vh; /* ← 元6vh → 30%減 */
 }
 
-/* 各行（時・分） */
+/* 数字枠（常にセンター） */
 .time-row {
   display: flex;
   justify-content: center;
-  gap: 4vw;
+  gap: 0.15em;
 }
 
-/* ⏰ 各桁の「枠」 */
-.digit-box {
-  width: 30vw;
-  height: 32vw;
-  display: flex;
-  justify-content: center;
-  align-items: center;
+/* 各数字セル */
+.digit {
+  width: 1em;
+  text-align: center;
+}
+
+/* 時・分 共通 */
+.hour,
+.minute {
   font-family: "Orbitron", sans-serif;
   font-weight: 900;
   font-size: 55vw;
-  line-height: 1;
+  line-height: 0.9;
   letter-spacing: -0.04em;
 }
 
-/* 時 ⇔ 分 の間（★ 1/3 に縮小） */
-.time-row + .time-row {
-  margin-top: 1vh;
+/* 時と分の間（30%減） */
+.minute {
+  margin-top: 4.2vh; /* ← 元6vh → 4.2vh */
 }
 
-/* =====================
+/* ======================
    📅 日付
-===================== */
+====================== */
 .date {
   font-size: 6vw;
   font-weight: 600;
-  margin-top: 1vh; /* ← 分 ⇔ 日付 も 1/3 */
+  margin-bottom: 4.2vh; /* ← 分との間も30%減 */
 }
 
-/* =====================
+/* ======================
    🌤 天気
-===================== */
+====================== */
 .weather {
   display: flex;
   flex-direction: column;
   align-items: center;
-  margin-top: 1vh;
   gap: 0.6vh;
 }
 
@@ -110,43 +110,39 @@ body {
 <body>
 <div class="container">
 
-  <!-- ⏰ 時刻 -->
   <div class="time-block">
-    <div class="time-row">
-      <div class="digit-box" id="h1">-</div>
-      <div class="digit-box" id="h2">-</div>
-    </div>
-    <div class="time-row">
-      <div class="digit-box" id="m1">-</div>
-      <div class="digit-box" id="m2">-</div>
-    </div>
+    <div class="time-row hour" id="hourRow"></div>
+    <div class="time-row minute" id="minuteRow"></div>
   </div>
 
-  <!-- 📅 日付 -->
   <div class="date" id="date">--</div>
 
-  <!-- 🌤 天気 -->
   <div class="weather">
     <div class="weather-icon" id="weatherIcon">--</div>
-    <div class="temp" id="temp">--℃ / --℃（--℃）</div>
-    <div class="rain" id="rain">☂️ --%</div>
+    <div class="temp" id="temp">--</div>
+    <div class="rain" id="rain">--</div>
   </div>
 
 </div>
 
 <script>
 // =====================
-// ⏰ 時刻
+// ⏰ 時刻（枠センター固定）
 // =====================
+function renderDigits(el, value) {
+  el.innerHTML = "";
+  value.split("").forEach(d => {
+    const span = document.createElement("span");
+    span.className = "digit";
+    span.textContent = d;
+    el.appendChild(span);
+  });
+}
+
 function updateTime() {
   const now = new Date();
-  const h = String(now.getHours()).padStart(2,"0");
-  const m = String(now.getMinutes()).padStart(2,"0");
-
-  h1.textContent = h[0];
-  h2.textContent = h[1];
-  m1.textContent = m[0];
-  m2.textContent = m[1];
+  renderDigits(hourRow, String(now.getHours()).padStart(2,"0"));
+  renderDigits(minuteRow, String(now.getMinutes()).padStart(2,"0"));
 
   const w = ["日","月","火","水","木","金","土"];
   date.textContent =
@@ -184,10 +180,9 @@ async function fetchWeather() {
   temp.textContent = `${max}℃ / ${min}℃（${nowTemp}℃）`;
   rain.textContent = rainVal !== undefined ? `☂️ ${rainVal}%` : "☂️ 未取得";
 
-  // 🎨 背景色
-  const hour = new Date().getHours();
+  const h = new Date().getHours();
   let bg;
-  if (hour >= 18) bg = "#0b1d3a";
+  if (h >= 18) bg = "#0b1d3a";
   else if (rainVal >= 50) bg = "#888";
   else if (icon === "☀️") bg = "#f59a00";
   else bg = "rgb(51,123,204)";
