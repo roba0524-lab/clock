@@ -32,7 +32,7 @@ body {
   animation: burnin 180s infinite alternate ease-in-out;
 }
 
-/* 🔥 焼き付き防止 */
+/* 焼き付き防止 */
 @keyframes burnin {
   from { transform: translate(0,0); }
   to   { transform: translate(8px,6px); }
@@ -41,10 +41,15 @@ body {
 /* ===== 時刻 ===== */
 .time-box {
   width: 100vw;
-  height: 38vh;          /* ← 枠の高さ固定 */
+  height: 38vh;
   display: flex;
   justify-content: center;
   align-items: center;
+}
+
+.minute-box {
+  height: 32vh;
+  margin-top: -6vh;
 }
 
 .time-text {
@@ -54,20 +59,37 @@ body {
   line-height: 1;
   letter-spacing: -0.04em;
   text-align: center;
+  transform-origin: top center;
 }
 
-/* 分は少し詰める */
-.minute-box {
-  height: 32vh;
-  margin-top: -6vh;
+/* パタンアニメ */
+.flip {
+  animation: flipDown 0.45s ease-out;
+}
+
+@keyframes flipDown {
+  0%   { transform: rotateX(0deg); }
+  100% { transform: rotateX(-90deg); }
+}
+
+/* ===== 秒ドット ===== */
+.dots {
+  font-size: 10vw;
+  line-height: 1;
+  margin-top: -4vh;
+  opacity: 1;
+  transition: opacity 0.15s linear;
+}
+
+.dots.off {
+  opacity: 0;
 }
 
 /* ===== 日付 ===== */
 .date {
   font-size: 6vw;
   font-weight: 600;
-  margin-top: 3px;
-  margin-bottom: 3px;
+  margin: 3px 0;
 }
 
 /* ===== 天気 ===== */
@@ -82,8 +104,7 @@ body {
   font-size: 16vw;
 }
 
-.temp,
-.rain {
+.temp, .rain {
   font-size: 6.5vw;
   font-weight: 700;
 }
@@ -98,37 +119,74 @@ body {
     <div id="hour" class="time-text">--</div>
   </div>
 
+  <!-- 秒ドット -->
+  <div id="dots" class="dots">・ ・</div>
+
   <!-- 分 -->
   <div class="time-box minute-box">
     <div id="minute" class="time-text">--</div>
   </div>
 
-  <!-- 日付 -->
   <div id="date" class="date">--</div>
 
-  <!-- 天気 -->
   <div class="weather">
     <div id="weatherIcon" class="weather-icon">--</div>
     <div id="temp" class="temp">--℃ / --℃（--℃）</div>
     <div id="rain" class="rain">☂️ --%</div>
   </div>
-
 </div>
 
 <script>
-// ===== 時刻 =====
+const hourEl = document.getElementById("hour");
+const minuteEl = document.getElementById("minute");
+const dotsEl = document.getElementById("dots");
+const dateEl = document.getElementById("date");
+
+let lastMinute = null;
+
+/* ===== 時刻 ===== */
 function updateTime() {
   const now = new Date();
-  hour.textContent = String(now.getHours()).padStart(2,"0");
-  minute.textContent = String(now.getMinutes()).padStart(2,"0");
+
+  const h = String(now.getHours()).padStart(2, "0");
+  const m = String(now.getMinutes()).padStart(2, "0");
+
+  hourEl.textContent = h;
+
+  if (m !== lastMinute) {
+    minuteEl.classList.remove("flip");
+    void minuteEl.offsetWidth; // 再発火用
+    minuteEl.textContent = m;
+    minuteEl.classList.add("flip");
+    lastMinute = m;
+  }
 
   const w = ["日","月","火","水","木","金","土"];
-  date.textContent = `${now.getMonth()+1}月${now.getDate()}日（${w[now.getDay()]}）`;
-}
-updateTime();
-setInterval(updateTime, 60000);
+  dateEl.textContent = `${now.getMonth()+1}月${now.getDate()}日（${w[now.getDay()]}）`;
 
-// ===== 天気 =====
+  updateBackground(now);
+}
+
+updateTime();
+setInterval(updateTime, 1000);
+
+/* ===== 秒ドット点滅 ===== */
+setInterval(() => {
+  dotsEl.classList.toggle("off");
+}, 1000);
+
+/* ===== 背景制御 ===== */
+function updateBackground(now) {
+  const h = now.getHours();
+
+  // 夜時間優先
+  if (h >= 18 || h < 5) {
+    document.documentElement.style.setProperty("--bg", "#0b1d3a");
+    return;
+  }
+}
+
+/* ===== 天気 ===== */
 async function fetchWeather() {
   const url =
     "https://api.open-meteo.com/v1/forecast" +
@@ -154,19 +212,10 @@ async function fetchWeather() {
   weatherIcon.textContent = icon;
   temp.textContent = `${max}℃ / ${min}℃（${nowTemp}℃）`;
   rain.textContent = rainVal !== undefined ? `☂️ ${rainVal}%` : "☂️ 未取得";
-
-  const h = new Date().getHours();
-  let bg;
-  if (h >= 18) bg = "#0b1d3a";
-  else if (rainVal >= 50) bg = "#888";
-  else if (icon === "☀️") bg = "#f59a00";
-  else bg = "rgb(51,123,204)";
-
-  document.documentElement.style.setProperty("--bg", bg);
 }
+
 fetchWeather();
 setInterval(fetchWeather, 30 * 60 * 1000);
 </script>
-
 </body>
 </html>
