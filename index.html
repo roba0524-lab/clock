@@ -7,11 +7,7 @@
 
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-
-<!-- 数字用 -->
-<link href="https://fonts.googleapis.com/css2?family=Orbitron:wght@700;900&display=swap" rel="stylesheet">
-<!-- 日本語UI用 -->
-<link href="https://fonts.googleapis.com/css2?family=Zen+Kaku+Gothic+New:wght@500;700&display=swap" rel="stylesheet">
+<link href="https://fonts.googleapis.com/css2?family=Orbitron:wght@700;900&family=Zen+Kaku+Gothic+New:wght@500;700&display=swap" rel="stylesheet">
 
 <style>
 :root {
@@ -24,7 +20,7 @@ body {
   background: var(--bg);
   color: var(--text);
   overflow: hidden;
-  font-family: "Zen Kaku Gothic New", -apple-system, BlinkMacSystemFont, sans-serif;
+  font-family: -apple-system, BlinkMacSystemFont, sans-serif;
 }
 
 .container {
@@ -50,14 +46,12 @@ body {
   align-items: center;
 }
 
-/* 時は左寄せ */
-.time-box.hour {
+.hour-box {
   justify-content: flex-start;
   padding-left: 6vw;
 }
 
-/* 分は右寄せ */
-.time-box.minute {
+.minute-box {
   justify-content: flex-end;
   padding-right: 6vw;
   height: 32vh;
@@ -72,49 +66,30 @@ body {
   letter-spacing: -0.04em;
 }
 
-/* 分ラッパー */
-.minute-wrap {
-  position: relative;
-  display: inline-block;
-}
-
-/* 秒ドット */
-.dot {
-  position: absolute;
-  width: 1.2vw;
-  height: 1.2vw;
-  background: white;
-  border-radius: 50%;
-  right: -1.6vw;
-  bottom: 1.2vw;
-  opacity: 0;
-  transition: opacity 0.2s linear;
-}
-
-/* 分切り替えアニメ */
+/* 分フリップ */
 .flip {
   animation: flip 0.35s ease;
 }
-
 @keyframes flip {
   0%   { transform: rotateX(0); }
   50%  { transform: rotateX(90deg); }
   100% { transform: rotateX(0); }
 }
 
-/* ===== 日付 ===== */
+/* ===== 日付・天気 ===== */
 .date {
+  font-family: "Zen Kaku Gothic New", sans-serif;
   font-size: 6vw;
   font-weight: 700;
   margin: 3px 0;
 }
 
-/* ===== 天気 ===== */
 .weather {
   display: flex;
   flex-direction: column;
   align-items: center;
   gap: 3px;
+  font-family: "Zen Kaku Gothic New", sans-serif;
 }
 
 .weather-icon {
@@ -125,23 +100,33 @@ body {
   font-size: 6.5vw;
   font-weight: 700;
 }
+
+/* ===== 外周ドット ===== */
+.edge-dot {
+  position: fixed;
+  width: 14px;
+  height: 14px;
+  border-radius: 50%;
+  background: white;
+  pointer-events: none;
+  opacity: 0;
+  transition: opacity 0.6s ease;
+}
 </style>
 </head>
 
 <body>
+
 <div class="container">
 
   <!-- 時 -->
-  <div class="time-box hour">
+  <div class="time-box hour-box">
     <div id="hour" class="time-text">--</div>
   </div>
 
   <!-- 分 -->
-  <div class="time-box minute">
-    <div class="minute-wrap">
-      <div id="minute" class="time-text">--</div>
-      <span id="dot" class="dot"></span>
-    </div>
+  <div class="time-box minute-box">
+    <div id="minute" class="time-text">--</div>
   </div>
 
   <div id="date" class="date">--</div>
@@ -151,8 +136,9 @@ body {
     <div id="temp" class="temp">--℃ / --℃（--℃）</div>
     <div id="rain" class="rain">☂️ --%</div>
   </div>
-
 </div>
+
+<div id="edgeDot" class="edge-dot"></div>
 
 <script>
 /* ===== 時刻 ===== */
@@ -176,21 +162,13 @@ function updateTime() {
   const w = ["日","月","火","水","木","金","土"];
   date.textContent = `${now.getMonth()+1}月${now.getDate()}日（${w[now.getDay()]}）`;
 
-  /* 夜背景 */
   if (now.getHours() >= 18 || now.getHours() < 5) {
     document.documentElement.style.setProperty("--bg", "#0b1d3a");
-  } else {
-    document.documentElement.style.setProperty("--bg", "rgb(51,123,204)");
   }
 }
 
 updateTime();
 setInterval(updateTime, 1000);
-
-/* 秒ドット点滅 */
-setInterval(() => {
-  dot.style.opacity = dot.style.opacity === "1" ? "0" : "1";
-}, 1000);
 
 /* ===== 天気 ===== */
 async function fetchWeather() {
@@ -222,6 +200,50 @@ async function fetchWeather() {
 
 fetchWeather();
 setInterval(fetchWeather, 30 * 60 * 1000);
+
+/* ===== 外周ドット（1周=60秒） ===== */
+const dot = document.getElementById("edgeDot");
+const dotSize = 14;
+const margin = 6;
+
+function updateEdgeDot() {
+  const now = new Date();
+  const sec = now.getSeconds() + now.getMilliseconds() / 1000;
+  const t = sec / 60;
+
+  const w = window.innerWidth - dotSize - margin;
+  const h = window.innerHeight - dotSize - margin;
+  const p = 2 * (w + h);
+  let d = t * p;
+
+  let x, y;
+
+  if (d < w) {
+    x = margin + d;
+    y = margin;
+  } else if (d < w + h) {
+    x = margin + w;
+    y = margin + (d - w);
+  } else if (d < 2 * w + h) {
+    x = margin + (w - (d - (w + h)));
+    y = margin + h;
+  } else {
+    x = margin;
+    y = margin + (h - (d - (2 * w + h)));
+  }
+
+  dot.style.left = `${x}px`;
+  dot.style.top = `${y}px`;
+}
+
+/* 移動：60fps */
+setInterval(updateEdgeDot, 16);
+
+/* ふわっと点滅 */
+setInterval(() => {
+  dot.style.opacity = dot.style.opacity === "1" ? "0" : "1";
+}, 1000);
 </script>
+
 </body>
 </html>
