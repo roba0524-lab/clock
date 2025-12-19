@@ -12,14 +12,13 @@
 <style>
 :root {
   --bg: rgb(51,123,204);
-  --text: #ffffff;
+  --text: #fff;
 }
 
 body {
   margin: 0;
   background: var(--bg);
   color: var(--text);
-  font-family: -apple-system, BlinkMacSystemFont, sans-serif;
   overflow: hidden;
 }
 
@@ -29,54 +28,54 @@ body {
   flex-direction: column;
   align-items: center;
   justify-content: center;
-  animation: burnin 180s infinite alternate ease-in-out;
 }
 
-/* 🔥 焼き付き防止 */
-@keyframes burnin {
-  from { transform: translate(0,0); }
-  to   { transform: translate(10px,8px); }
-}
+/* ===== ⏰ 時刻ブロック ===== */
 
-/* ===== 時刻ブロック ===== */
 .time-block {
   display: flex;
   flex-direction: column;
   align-items: center;
-  margin-bottom: 6vh; /* ← ★ 時と分の行間（ここが今回の主役） */
 }
 
-/* 固定サイズの枠（センター厳守） */
-.time-box {
-  width: 90vw;
-  height: 40vh;
+/* 時・分それぞれ2桁固定 */
+.digits {
+  display: grid;
+  grid-template-columns: repeat(2, 1fr);
+  gap: 0;
+}
+
+/* 1桁用セル（絶対センター） */
+.digit {
+  width: 45vw;
+  height: 45vw;
   display: flex;
   align-items: center;
   justify-content: center;
-}
-
-/* 数字 */
-.time-text {
   font-family: "Orbitron", sans-serif;
   font-weight: 900;
   font-size: 55vw;
   line-height: 1;
-  letter-spacing: 0; /* 枠センター優先 */
 }
 
-/* ===== 日付 ===== */
+/* 分は少し上に詰める */
+.minutes {
+  margin-top: -8vw;
+}
+
+/* ===== 📅 日付 ===== */
 .date {
   font-size: 6vw;
-  font-weight: 600;
-  margin-bottom: 3px; /* ← 日付〜天気の行間（指定どおり3px） */
+  margin-top: 8px;
 }
 
-/* ===== 天気 ===== */
+/* ===== 🌤 天気 ===== */
 .weather {
+  margin-top: 3px;
   display: flex;
   flex-direction: column;
   align-items: center;
-  gap: 0.6vh;
+  gap: 3px;
 }
 
 .weather-icon {
@@ -88,26 +87,43 @@ body {
   font-size: 6.5vw;
   font-weight: 700;
 }
+
+/* 焼き付き防止 */
+.container {
+  animation: burnin 180s infinite alternate ease-in-out;
+}
+
+@keyframes burnin {
+  from { transform: translate(0,0); }
+  to   { transform: translate(10px,8px); }
+}
 </style>
 </head>
 
 <body>
 <div class="container">
 
+  <!-- ⏰ 時 -->
   <div class="time-block">
-    <div class="time-box">
-      <div id="hour" class="time-text">--</div>
+    <div class="digits hours">
+      <div id="hour1" class="digit">-</div>
+      <div id="hour2" class="digit">-</div>
     </div>
-    <div class="time-box">
-      <div id="minute" class="time-text">--</div>
+
+    <!-- 分 -->
+    <div class="digits minutes">
+      <div id="min1" class="digit">-</div>
+      <div id="min2" class="digit">-</div>
     </div>
   </div>
 
+  <!-- 日付 -->
   <div id="date" class="date">--</div>
 
+  <!-- 天気 -->
   <div class="weather">
     <div id="weatherIcon" class="weather-icon">--</div>
-    <div id="temp" class="temp">--℃</div>
+    <div id="temp" class="temp">--℃ / --℃（--℃）</div>
     <div id="rain" class="rain">☂️ --%</div>
   </div>
 
@@ -117,8 +133,13 @@ body {
 // ===== 時刻 =====
 function updateTime() {
   const now = new Date();
-  hour.textContent = String(now.getHours()).padStart(2,"0");
-  minute.textContent = String(now.getMinutes()).padStart(2,"0");
+  const h = String(now.getHours()).padStart(2, "0");
+  const m = String(now.getMinutes()).padStart(2, "0");
+
+  hour1.textContent = h[0];
+  hour2.textContent = h[1];
+  min1.textContent  = m[0];
+  min2.textContent  = m[1];
 
   const w = ["日","月","火","水","木","金","土"];
   date.textContent =
@@ -153,10 +174,18 @@ async function fetchWeather() {
   weatherIcon.textContent = icon;
   temp.textContent = `${max}℃ / ${min}℃（${nowTemp}℃）`;
   rain.textContent = rainVal !== undefined ? `☂️ ${rainVal}%` : "☂️ 未取得";
+
+  const hour = new Date().getHours();
+  let bg;
+  if (hour >= 18) bg = "#0b1d3a";
+  else if (rainVal >= 50) bg = "#888";
+  else if (icon === "☀️") bg = "#f59a00";
+  else bg = "rgb(51,123,204)";
+
+  document.documentElement.style.setProperty("--bg", bg);
 }
 fetchWeather();
 setInterval(fetchWeather, 30 * 60 * 1000);
 </script>
-
 </body>
 </html>
