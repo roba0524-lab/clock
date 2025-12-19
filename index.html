@@ -41,19 +41,29 @@ body {
 /* ===== 時刻ブロック ===== */
 .time-box {
   width: 100vw;
-  height: 38vh;              /* ← 枠の高さ固定 */
+  height: 38vh;
   display: flex;
   justify-content: center;
   align-items: center;
 }
 
 .time-text {
+  display: flex;
+  justify-content: center;
+  align-items: center;
   font-family: "Orbitron", sans-serif;
   font-weight: 900;
   font-size: 55vw;
   line-height: 1;
   letter-spacing: -0.04em;
-  text-align: center;
+}
+
+/* 各桁の固定枠 */
+.digit {
+  display: inline-flex;
+  justify-content: center;
+  align-items: center;
+  width: 0.6em;   /* ← ここが「箱」 */
 }
 
 /* 分は少し詰める */
@@ -75,7 +85,7 @@ body {
   display: flex;
   flex-direction: column;
   align-items: center;
-  gap: 3px; /* ← 日付から下、全部3px基準 */
+  gap: 3px;
 }
 
 .weather-icon {
@@ -95,12 +105,18 @@ body {
 
   <!-- 時 -->
   <div class="time-box">
-    <div id="hour" class="time-text">--</div>
+    <div id="hour" class="time-text">
+      <span class="digit">-</span>
+      <span class="digit">-</span>
+    </div>
   </div>
 
   <!-- 分 -->
   <div class="time-box minute-box">
-    <div id="minute" class="time-text">--</div>
+    <div id="minute" class="time-text">
+      <span class="digit">-</span>
+      <span class="digit">-</span>
+    </div>
   </div>
 
   <div id="date" class="date">--</div>
@@ -114,15 +130,22 @@ body {
 
 <script>
 // ===== 時刻 =====
+function setDigits(el, value) {
+  const str = value.toString().padStart(2, "0");
+  el.children[0].textContent = str[0];
+  el.children[1].textContent = str[1];
+}
+
 function updateTime() {
   const now = new Date();
-  hour.textContent = String(now.getHours()).padStart(2,"0");
-  minute.textContent = String(now.getMinutes()).padStart(2,"0");
+  setDigits(hour, now.getHours());
+  setDigits(minute, now.getMinutes());
 
   const w = ["日","月","火","水","木","金","土"];
   date.textContent =
     `${now.getMonth()+1}月${now.getDate()}日（${w[now.getDay()]}）`;
 }
+
 updateTime();
 setInterval(updateTime, 60000);
 
