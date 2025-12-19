@@ -47,23 +47,25 @@ body {
   align-items: center;
 }
 
-.time-text {
+/* 桁コンテナ */
+.time-digits {
+  display: flex;
+  gap: 2vw; /* ← 桁間スペース（重なり防止） */
+}
+
+/* 各桁の箱 */
+.digit {
+  width: 26vw;      /* ← 桁の物理サイズ */
+  height: 38vh;
   display: flex;
   justify-content: center;
   align-items: center;
+
   font-family: "Orbitron", sans-serif;
   font-weight: 900;
   font-size: 55vw;
   line-height: 1;
   letter-spacing: -0.04em;
-}
-
-/* 各桁の固定枠 */
-.digit {
-  display: inline-flex;
-  justify-content: center;
-  align-items: center;
-  width: 0.6em;   /* ← ここが「箱」 */
 }
 
 /* 分は少し詰める */
@@ -76,8 +78,7 @@ body {
 .date {
   font-size: 6vw;
   font-weight: 600;
-  margin-top: 3px;
-  margin-bottom: 3px;
+  margin: 3px 0;
 }
 
 /* ===== 天気 ===== */
@@ -105,17 +106,17 @@ body {
 
   <!-- 時 -->
   <div class="time-box">
-    <div id="hour" class="time-text">
-      <span class="digit">-</span>
-      <span class="digit">-</span>
+    <div class="time-digits">
+      <span id="hour1" class="digit">-</span>
+      <span id="hour2" class="digit">-</span>
     </div>
   </div>
 
   <!-- 分 -->
   <div class="time-box minute-box">
-    <div id="minute" class="time-text">
-      <span class="digit">-</span>
-      <span class="digit">-</span>
+    <div class="time-digits">
+      <span id="min1" class="digit">-</span>
+      <span id="min2" class="digit">-</span>
     </div>
   </div>
 
@@ -130,22 +131,21 @@ body {
 
 <script>
 // ===== 時刻 =====
-function setDigits(el, value) {
-  const str = value.toString().padStart(2, "0");
-  el.children[0].textContent = str[0];
-  el.children[1].textContent = str[1];
-}
-
 function updateTime() {
   const now = new Date();
-  setDigits(hour, now.getHours());
-  setDigits(minute, now.getMinutes());
+
+  const h = String(now.getHours()).padStart(2,"0");
+  const m = String(now.getMinutes()).padStart(2,"0");
+
+  hour1.textContent = h[0];
+  hour2.textContent = h[1];
+  min1.textContent  = m[0];
+  min2.textContent  = m[1];
 
   const w = ["日","月","火","水","木","金","土"];
   date.textContent =
     `${now.getMonth()+1}月${now.getDate()}日（${w[now.getDay()]}）`;
 }
-
 updateTime();
 setInterval(updateTime, 60000);
 
