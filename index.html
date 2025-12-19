@@ -12,7 +12,7 @@
 <style>
 :root {
   --bg: rgb(51,123,204);
-  --text: #ffffff;
+  --text: #fff;
 }
 
 body {
@@ -50,6 +50,7 @@ body {
 .minute-box {
   height: 32vh;
   margin-top: -6vh;
+  position: relative;
 }
 
 .time-text {
@@ -61,50 +62,32 @@ body {
   text-align: center;
 }
 
-/* 分の数字分解 */
-.minute-wrap {
-  display: inline-flex;
-  position: relative;
-}
-
-.digit {
-  position: relative;
-  display: inline-block;
-}
-
-/* 秒ドット */
-.second-dot {
-  position: absolute;
-  right: -0.15em;
-  bottom: -0.25em;
-  width: 0.12em;
-  height: 0.12em;
-  background: white;
-  border-radius: 50%;
-  opacity: 0;
-  animation: blink 1s steps(1) infinite;
-}
-
-@keyframes blink {
-  50% { opacity: 1; }
-}
-
-/* 分切替アニメ */
+/* 分パタン */
 .flip {
-  animation: flip 0.4s ease-out;
+  animation: flip 0.35s ease;
 }
 
 @keyframes flip {
-  0%   { transform: rotateX(0deg); }
-  50%  { transform: rotateX(-90deg); }
-  100% { transform: rotateX(0deg); }
+  0%   { transform: translateY(0); }
+  50%  { transform: translateY(-6px); }
+  100% { transform: translateY(0); }
+}
+
+/* 秒ドット */
+.dot {
+  position: absolute;
+  right: 12%;
+  bottom: 22%;
+  font-size: 4vw;
+  opacity: 0;
+  transition: opacity 0.15s linear;
 }
 
 /* ===== 日付 ===== */
 .date {
   font-size: 6vw;
   font-weight: 600;
-  margin: 3px 0;
+  margin: 6px 0;
 }
 
 /* ===== 天気 ===== */
@@ -136,66 +119,101 @@ body {
 
   <!-- 分 -->
   <div class="time-box minute-box">
-    <div id="minute" class="time-text">
-      <div class="minute-wrap">
-        <span id="min10" class="digit">-</span>
-        <span id="min1" class="digit">
-          -
-          <span class="second-dot"></span>
-        </span>
-      </div>
-    </div>
+    <div id="minute" class="time-text">--</div>
+    <div id="dot" class="dot">•</div>
   </div>
 
+  <!-- 日付 -->
   <div id="date" class="date">--</div>
 
+  <!-- 天気 -->
   <div class="weather">
     <div id="weatherIcon" class="weather-icon">--</div>
     <div id="temp" class="temp">--℃ / --℃（--℃）</div>
     <div id="rain" class="rain">☂️ --%</div>
   </div>
+
 </div>
 
 <script>
+/* ===== 時刻 ===== */
 const hourEl = document.getElementById("hour");
-const min10El = document.getElementById("min10");
-const min1El  = document.getElementById("min1");
-const dateEl  = document.getElementById("date");
+const minuteEl = document.getElementById("minute");
+const dateEl = document.getElementById("date");
+const dotEl = document.getElementById("dot");
 
 let lastMinute = null;
 
 function updateTime() {
   const now = new Date();
   const h = now.getHours();
-  const m = String(now.getMinutes()).padStart(2, "0");
+  const m = now.getMinutes();
 
   hourEl.textContent = String(h).padStart(2, "0");
 
-  if (lastMinute !== m) {
-    min10El.classList.add("flip");
-    min1El.classList.add("flip");
-    setTimeout(() => {
-      min10El.classList.remove("flip");
-      min1El.classList.remove("flip");
-    }, 400);
+  if (m !== lastMinute) {
+    minuteEl.classList.remove("flip");
+    void minuteEl.offsetWidth;
+    minuteEl.classList.add("flip");
+    lastMinute = m;
   }
 
-  min10El.textContent = m[0];
-  min1El.childNodes[0].nodeValue = m[1];
+  minuteEl.textContent = String(m).padStart(2, "0");
 
   const w = ["日","月","火","水","木","金","土"];
   dateEl.textContent = `${now.getMonth()+1}月${now.getDate()}日（${w[now.getDay()]}）`;
 
-  lastMinute = m;
-
-  /* 夜時間背景 */
-  let bg = "rgb(51,123,204)";
-  if (h >= 18 || h < 5) bg = "#0b1d3a";
-  document.documentElement.style.setProperty("--bg", bg);
+  // 夜背景
+  if (h >= 18 || h < 5) {
+    document.documentElement.style.setProperty("--bg", "#0b1d3a");
+  }
 }
 
 updateTime();
 setInterval(updateTime, 1000);
+
+/* 秒ドット点滅 */
+setInterval(() => {
+  dotEl.style.opacity = dotEl.style.opacity === "1" ? "0" : "1";
+}, 1000);
+
+/* ===== 天気 ===== */
+async function fetchWeather() {
+  try {
+    const url =
+      "https://api.open-meteo.com/v1/forecast" +
+      "?latitude=34.612&longitude=135.734" +
+      "&current=temperature_2m" +
+      "&daily=temperature_2m_max,temperature_2m_min,precipitation_probability_max,weather_code" +
+      "&timezone=Asia%2FTokyo";
+
+    const res = await fetch(url);
+    const data = await res.json();
+
+    const max = Math.round(data.daily.temperature_2m_max[0]);
+    const min = Math.round(data.daily.temperature_2m_min[0]);
+    const nowTemp = Math.round(data.current.temperature_2m);
+    const rainVal = data.daily.precipitation_probability_max[0];
+    const code = data.daily.weather_code[0];
+
+    let icon = "☀️";
+    if (code >= 1 && code <= 3) icon = "⛅";
+    else if (code >= 45) icon = "☁️";
+    if (rainVal >= 50) icon = "🌧️";
+
+    document.getElementById("weatherIcon").textContent = icon;
+    document.getElementById("temp").textContent =
+      `${max}℃ / ${min}℃（${nowTemp}℃）`;
+    document.getElementById("rain").textContent =
+      rainVal !== undefined ? `☂️ ${rainVal}%` : "☂️ 未取得";
+
+  } catch (e) {
+    console.error("weather error", e);
+  }
+}
+
+fetchWeather();
+setInterval(fetchWeather, 30 * 60 * 1000);
 </script>
 </body>
 </html>
