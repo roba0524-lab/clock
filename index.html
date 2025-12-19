@@ -39,33 +39,34 @@ body {
 }
 
 /* ===== 時刻ブロック ===== */
-.time-row {
-  display: flex;
-  justify-content: center;
-  align-items: center;
-  height: 18vh;
-}
-
-/* 1文字用の固定枠 */
-.digit-box {
-  width: 26vw;          /* ← ここが肝 */
-  height: 100%;
+.time-box {
+  width: 100vw;
+  height: 38vh;
   display: flex;
   justify-content: center;
   align-items: center;
 }
 
-/* 数字 */
-.digit {
+/* ★ 2桁を箱で管理 */
+.time-digits {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 4vw; /* ← ❘1❘と❘2❘の間を確実に確保 */
+}
+
+.time-digit {
   font-family: "Orbitron", sans-serif;
   font-weight: 900;
   font-size: 55vw;
   line-height: 1;
+  width: 1em;
+  text-align: center;
 }
 
-/* 分は少し上に詰める */
-.minute-row {
-  margin-top: -4vh;
+/* 分は少し上に寄せる */
+.minute-box {
+  height: 32vh;
+  margin-top: -6vh;
 }
 
 /* ===== 日付 ===== */
@@ -99,15 +100,19 @@ body {
 <div class="container">
 
   <!-- 時 -->
-  <div class="time-row">
-    <div class="digit-box"><div id="h1" class="digit">-</div></div>
-    <div class="digit-box"><div id="h2" class="digit">-</div></div>
+  <div class="time-box">
+    <div class="time-digits">
+      <span id="hour1" class="time-digit">-</span>
+      <span id="hour2" class="time-digit">-</span>
+    </div>
   </div>
 
   <!-- 分 -->
-  <div class="time-row minute-row">
-    <div class="digit-box"><div id="m1" class="digit">-</div></div>
-    <div class="digit-box"><div id="m2" class="digit">-</div></div>
+  <div class="time-box minute-box">
+    <div class="time-digits">
+      <span id="min1" class="time-digit">-</span>
+      <span id="min2" class="time-digit">-</span>
+    </div>
   </div>
 
   <div id="date" class="date">--</div>
@@ -127,10 +132,10 @@ function updateTime() {
   const h = String(now.getHours()).padStart(2,"0");
   const m = String(now.getMinutes()).padStart(2,"0");
 
-  h1.textContent = h[0];
-  h2.textContent = h[1];
-  m1.textContent = m[0];
-  m2.textContent = m[1];
+  hour1.textContent = h[0];
+  hour2.textContent = h[1];
+  min1.textContent = m[0];
+  min2.textContent = m[1];
 
   const w = ["日","月","火","水","木","金","土"];
   date.textContent =
