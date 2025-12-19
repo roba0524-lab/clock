@@ -1,9 +1,9 @@
 <!DOCTYPE html>
 <html lang="ja">
 <head>
-<meta charset="UTF-8">
-<meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>置時計</title>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<title>Weather Clock</title>
 
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
@@ -12,13 +12,14 @@
 <style>
 :root {
   --bg: rgb(51,123,204);
-  --text: #fff;
+  --text: #ffffff;
 }
 
 body {
   margin: 0;
   background: var(--bg);
   color: var(--text);
+  font-family: -apple-system, BlinkMacSystemFont, sans-serif;
   overflow: hidden;
 }
 
@@ -28,50 +29,47 @@ body {
   flex-direction: column;
   align-items: center;
   justify-content: center;
+  text-align: center;
+  animation: burnin 180s infinite alternate ease-in-out;
 }
 
-/* ===== ⏰ 時刻ブロック ===== */
+/* 🔥 焼き付き防止 */
+@keyframes burnin {
+  from { transform: translate(0,0); }
+  to   { transform: translate(10px,8px); }
+}
 
-.time-block {
+/* ⏰ 時刻 */
+.time-row {
+  width: 100%;
   display: flex;
-  flex-direction: column;
-  align-items: center;
-}
-
-/* 時・分それぞれ2桁固定 */
-.digits {
-  display: grid;
-  grid-template-columns: repeat(2, 1fr);
-  gap: 0;
-}
-
-/* 1桁用セル（絶対センター） */
-.digit {
-  width: 45vw;
-  height: 45vw;
-  display: flex;
-  align-items: center;
   justify-content: center;
+}
+
+.time-box {
+  width: 50vw;               /* ← 常に同じ枠 */
+  display: flex;
+  justify-content: center;   /* ← 中央固定 */
   font-family: "Orbitron", sans-serif;
   font-weight: 900;
   font-size: 55vw;
-  line-height: 1;
+  line-height: 0.9;
+  letter-spacing: -0.04em;
 }
 
-/* 分は少し上に詰める */
-.minutes {
-  margin-top: -8vw;
+.minute {
+  margin-top: -6vw;          /* Apple Watch感 */
+  margin-bottom: 6vh;        /* ★時分と日付の間だけ余白 */
 }
 
-/* ===== 📅 日付 ===== */
+/* 📅 日付 */
 .date {
   font-size: 6vw;
-  margin-top: 8px;
+  font-weight: 600;
 }
 
-/* ===== 🌤 天気 ===== */
+/* 🌤 天気 */
 .weather {
-  margin-top: 3px;
   display: flex;
   flex-direction: column;
   align-items: center;
@@ -87,40 +85,22 @@ body {
   font-size: 6.5vw;
   font-weight: 700;
 }
-
-/* 焼き付き防止 */
-.container {
-  animation: burnin 180s infinite alternate ease-in-out;
-}
-
-@keyframes burnin {
-  from { transform: translate(0,0); }
-  to   { transform: translate(10px,8px); }
-}
 </style>
 </head>
 
 <body>
 <div class="container">
 
-  <!-- ⏰ 時 -->
-  <div class="time-block">
-    <div class="digits hours">
-      <div id="hour1" class="digit">-</div>
-      <div id="hour2" class="digit">-</div>
-    </div>
-
-    <!-- 分 -->
-    <div class="digits minutes">
-      <div id="min1" class="digit">-</div>
-      <div id="min2" class="digit">-</div>
-    </div>
+  <div class="time-row">
+    <div id="hour" class="time-box">--</div>
   </div>
 
-  <!-- 日付 -->
+  <div class="time-row">
+    <div id="minute" class="time-box minute">--</div>
+  </div>
+
   <div id="date" class="date">--</div>
 
-  <!-- 天気 -->
   <div class="weather">
     <div id="weatherIcon" class="weather-icon">--</div>
     <div id="temp" class="temp">--℃ / --℃（--℃）</div>
@@ -130,16 +110,11 @@ body {
 </div>
 
 <script>
-// ===== 時刻 =====
+// ⏰ 時刻
 function updateTime() {
   const now = new Date();
-  const h = String(now.getHours()).padStart(2, "0");
-  const m = String(now.getMinutes()).padStart(2, "0");
-
-  hour1.textContent = h[0];
-  hour2.textContent = h[1];
-  min1.textContent  = m[0];
-  min2.textContent  = m[1];
+  hour.textContent = String(now.getHours()).padStart(2,"0");
+  minute.textContent = String(now.getMinutes()).padStart(2,"0");
 
   const w = ["日","月","火","水","木","金","土"];
   date.textContent =
@@ -148,7 +123,7 @@ function updateTime() {
 updateTime();
 setInterval(updateTime, 60000);
 
-// ===== 天気 =====
+// 🌤 天気
 async function fetchWeather() {
   const url =
     "https://api.open-meteo.com/v1/forecast" +
@@ -175,15 +150,16 @@ async function fetchWeather() {
   temp.textContent = `${max}℃ / ${min}℃（${nowTemp}℃）`;
   rain.textContent = rainVal !== undefined ? `☂️ ${rainVal}%` : "☂️ 未取得";
 
-  const hour = new Date().getHours();
+  const h = new Date().getHours();
   let bg;
-  if (hour >= 18) bg = "#0b1d3a";
+  if (h >= 18) bg = "#0b1d3a";
   else if (rainVal >= 50) bg = "#888";
   else if (icon === "☀️") bg = "#f59a00";
   else bg = "rgb(51,123,204)";
 
   document.documentElement.style.setProperty("--bg", bg);
 }
+
 fetchWeather();
 setInterval(fetchWeather, 30 * 60 * 1000);
 </script>
