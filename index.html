@@ -46,14 +46,14 @@ body {
   align-items: center;
 }
 
-.hour-box {
+.time-box.hour {
   justify-content: flex-start;
-  padding-left: 6vw;
+  padding-left: 8vw;
 }
 
-.minute-box {
+.time-box.minute {
   justify-content: flex-end;
-  padding-right: 6vw;
+  padding-right: 8vw;
   height: 32vh;
   margin-top: -6vh;
 }
@@ -66,10 +66,11 @@ body {
   letter-spacing: -0.04em;
 }
 
-/* 分フリップ */
+/* 分切り替え */
 .flip {
   animation: flip 0.35s ease;
 }
+
 @keyframes flip {
   0%   { transform: rotateX(0); }
   50%  { transform: rotateX(90deg); }
@@ -77,10 +78,14 @@ body {
 }
 
 /* ===== 日付・天気 ===== */
-.date {
+.date,
+.weather {
   font-family: "Zen Kaku Gothic New", sans-serif;
+}
+
+.date {
   font-size: 6vw;
-  font-weight: 700;
+  font-weight: 600;
   margin: 3px 0;
 }
 
@@ -89,7 +94,6 @@ body {
   flex-direction: column;
   align-items: center;
   gap: 3px;
-  font-family: "Zen Kaku Gothic New", sans-serif;
 }
 
 .weather-icon {
@@ -104,13 +108,20 @@ body {
 /* ===== 外周ドット ===== */
 .edge-dot {
   position: fixed;
-  width: 14px;
-  height: 14px;
-  border-radius: 50%;
+  width: 10px;
+  height: 10px;
   background: white;
-  pointer-events: none;
+  border-radius: 50%;
   opacity: 0;
-  transition: opacity 0.6s ease;
+  pointer-events: none;
+  animation: fade 1s infinite;
+}
+
+@keyframes fade {
+  0%   { opacity: 0; }
+  30%  { opacity: 0.9; }
+  60%  { opacity: 0.3; }
+  100% { opacity: 0; }
 }
 </style>
 </head>
@@ -118,14 +129,11 @@ body {
 <body>
 
 <div class="container">
-
-  <!-- 時 -->
-  <div class="time-box hour-box">
+  <div class="time-box hour">
     <div id="hour" class="time-text">--</div>
   </div>
 
-  <!-- 分 -->
-  <div class="time-box minute-box">
+  <div class="time-box minute">
     <div id="minute" class="time-text">--</div>
   </div>
 
@@ -164,11 +172,50 @@ function updateTime() {
 
   if (now.getHours() >= 18 || now.getHours() < 5) {
     document.documentElement.style.setProperty("--bg", "#0b1d3a");
+  } else {
+    document.documentElement.style.setProperty("--bg", "rgb(51,123,204)");
   }
 }
 
 updateTime();
 setInterval(updateTime, 1000);
+
+/* ===== 外周ドット（上中央スタート） ===== */
+const dot = document.getElementById("edgeDot");
+
+function updateEdgeDot() {
+  const now = new Date();
+  const sec = now.getSeconds() + now.getMilliseconds() / 1000;
+
+  const w = window.innerWidth;
+  const h = window.innerHeight;
+  const perimeter = 2 * (w + h);
+
+  const offset = w / 2; // ← 上中央スタート
+  let d = (sec / 60) * perimeter + offset;
+  d %= perimeter;
+
+  let x, y;
+
+  if (d < w) {
+    x = d;
+    y = 0;
+  } else if (d < w + h) {
+    x = w;
+    y = d - w;
+  } else if (d < w + h + w) {
+    x = w - (d - w - h);
+    y = h;
+  } else {
+    x = 0;
+    y = h - (d - w - h - w);
+  }
+
+  dot.style.left = `${x - 5}px`;
+  dot.style.top  = `${y - 5}px`;
+}
+
+setInterval(updateEdgeDot, 16);
 
 /* ===== 天気 ===== */
 async function fetchWeather() {
@@ -200,49 +247,6 @@ async function fetchWeather() {
 
 fetchWeather();
 setInterval(fetchWeather, 30 * 60 * 1000);
-
-/* ===== 外周ドット（1周=60秒） ===== */
-const dot = document.getElementById("edgeDot");
-const dotSize = 14;
-const margin = 6;
-
-function updateEdgeDot() {
-  const now = new Date();
-  const sec = now.getSeconds() + now.getMilliseconds() / 1000;
-  const t = sec / 60;
-
-  const w = window.innerWidth - dotSize - margin;
-  const h = window.innerHeight - dotSize - margin;
-  const p = 2 * (w + h);
-  let d = t * p;
-
-  let x, y;
-
-  if (d < w) {
-    x = margin + d;
-    y = margin;
-  } else if (d < w + h) {
-    x = margin + w;
-    y = margin + (d - w);
-  } else if (d < 2 * w + h) {
-    x = margin + (w - (d - (w + h)));
-    y = margin + h;
-  } else {
-    x = margin;
-    y = margin + (h - (d - (2 * w + h)));
-  }
-
-  dot.style.left = `${x}px`;
-  dot.style.top = `${y}px`;
-}
-
-/* 移動：60fps */
-setInterval(updateEdgeDot, 16);
-
-/* ふわっと点滅 */
-setInterval(() => {
-  dot.style.opacity = dot.style.opacity === "1" ? "0" : "1";
-}, 1000);
 </script>
 
 </body>
