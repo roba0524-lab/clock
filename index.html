@@ -35,7 +35,7 @@ body {
 /* 焼き付き防止 */
 @keyframes burnin {
   from { transform: translate(0,0); }
-  to   { transform: translate(8px,6px); }
+  to { transform: translate(8px,6px); }
 }
 
 /* ===== 時刻 ===== */
@@ -56,33 +56,40 @@ body {
   text-align: center;
 }
 
-/* 分だけ位置調整 */
+/* 分 */
 .minute-box {
   height: 32vh;
   margin-top: -6vh;
 }
 
-/* 分を相対配置（←重要） */
-#minute {
+/* 分ラッパー（←重要） */
+.minute-wrap {
   position: relative;
+  display: inline-block;
 }
 
 /* 秒ドット */
-.second-dot {
+.dot {
   position: absolute;
-  right: -10px;     /* 一の位の横 */
-  top: -10px;       /* 少し上 */
-  width: 14px;
-  height: 14px;
+  width: 1.2vw;
+  height: 1.2vw;
   background: white;
   border-radius: 50%;
+  right: -1.6vw;   /* 分の一の位の右 */
+  bottom: 1.2vw;   /* 少し上 */
   opacity: 0;
-  animation: blink 1s steps(1) infinite;
+  transition: opacity 0.2s linear;
 }
 
-@keyframes blink {
-  0%   { opacity: 1; }
-  50%  { opacity: 0; }
+/* 分切り替えアニメ */
+.flip {
+  animation: flip 0.35s ease;
+}
+
+@keyframes flip {
+  0%   { transform: rotateX(0); }
+  50%  { transform: rotateX(90deg); }
+  100% { transform: rotateX(0); }
 }
 
 /* ===== 日付 ===== */
@@ -121,9 +128,9 @@ body {
 
   <!-- 分 -->
   <div class="time-box minute-box">
-    <div id="minute" class="time-text">
-      --
-      <div class="second-dot"></div>
+    <div class="minute-wrap">
+      <div id="minute" class="time-text">--</div>
+      <span id="dot" class="dot"></span>
     </div>
   </div>
 
@@ -139,22 +146,39 @@ body {
 
 <script>
 /* ===== 時刻 ===== */
+let lastMinute = null;
+
 function updateTime() {
   const now = new Date();
-  hour.textContent = String(now.getHours()).padStart(2,"0");
-  minute.firstChild.textContent = String(now.getMinutes()).padStart(2,"0");
+  const h = String(now.getHours()).padStart(2,"0");
+  const m = String(now.getMinutes()).padStart(2,"0");
+
+  hour.textContent = h;
+
+  if (m !== lastMinute) {
+    minute.classList.remove("flip");
+    void minute.offsetWidth;
+    minute.classList.add("flip");
+    minute.textContent = m;
+    lastMinute = m;
+  }
 
   const w = ["日","月","火","水","木","金","土"];
   date.textContent = `${now.getMonth()+1}月${now.getDate()}日（${w[now.getDay()]}）`;
 
-  // 夜時間背景
-  const h = now.getHours();
-  if (h >= 18 || h < 5) {
+  /* 夜時間背景 */
+  if (now.getHours() >= 18 || now.getHours() < 5) {
     document.documentElement.style.setProperty("--bg", "#0b1d3a");
   }
 }
+
 updateTime();
 setInterval(updateTime, 1000);
+
+/* 秒ドット点滅 */
+setInterval(() => {
+  dot.style.opacity = dot.style.opacity === "1" ? "0" : "1";
+}, 1000);
 
 /* ===== 天気 ===== */
 async function fetchWeather() {
@@ -181,7 +205,7 @@ async function fetchWeather() {
 
   weatherIcon.textContent = icon;
   temp.textContent = `${max}℃ / ${min}℃（${nowTemp}℃）`;
-  rain.textContent = rainVal !== undefined ? `☂️ ${rainVal}%` : "☂️ 未取得";
+  rain.textContent = `☂️ ${rainVal}%`;
 }
 
 fetchWeather();
