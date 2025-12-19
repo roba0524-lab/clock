@@ -45,7 +45,11 @@ body {
   display: flex;
   justify-content: center;
   align-items: center;
-  position: relative;
+}
+
+.minute-box {
+  height: 32vh;
+  margin-top: -6vh;
 }
 
 .time-text {
@@ -57,36 +61,27 @@ body {
   text-align: center;
 }
 
-/* 分 */
-.minute-box {
-  height: 32vh;
-  margin-top: -6vh;
+/* 分の数字分解 */
+.minute-wrap {
+  display: inline-flex;
+  position: relative;
 }
 
-/* 分パタンアニメ */
-.flip {
-  animation: flip 0.35s ease-out;
+.digit {
+  position: relative;
+  display: inline-block;
 }
 
-@keyframes flip {
-  from { transform: rotateX(0deg); }
-  to   { transform: rotateX(-90deg); }
-}
-
-/* ===== 秒ドット ===== */
+/* 秒ドット */
 .second-dot {
   position: absolute;
-  right: 38%;
-  bottom: 18%;
-  width: 1.2vw;
-  height: 1.2vw;
-  border-radius: 50%;
+  right: -0.15em;
+  bottom: -0.25em;
+  width: 0.12em;
+  height: 0.12em;
   background: white;
+  border-radius: 50%;
   opacity: 0;
-}
-
-/* 点滅 */
-.blink {
   animation: blink 1s steps(1) infinite;
 }
 
@@ -94,12 +89,22 @@ body {
   50% { opacity: 1; }
 }
 
+/* 分切替アニメ */
+.flip {
+  animation: flip 0.4s ease-out;
+}
+
+@keyframes flip {
+  0%   { transform: rotateX(0deg); }
+  50%  { transform: rotateX(-90deg); }
+  100% { transform: rotateX(0deg); }
+}
+
 /* ===== 日付 ===== */
 .date {
   font-size: 6vw;
   font-weight: 600;
-  margin-top: 3px;
-  margin-bottom: 3px;
+  margin: 3px 0;
 }
 
 /* ===== 天気 ===== */
@@ -110,8 +115,14 @@ body {
   gap: 3px;
 }
 
-.weather-icon { font-size: 16vw; }
-.temp, .rain { font-size: 6.5vw; font-weight: 700; }
+.weather-icon {
+  font-size: 16vw;
+}
+
+.temp, .rain {
+  font-size: 6.5vw;
+  font-weight: 700;
+}
 </style>
 </head>
 
@@ -125,8 +136,15 @@ body {
 
   <!-- 分 -->
   <div class="time-box minute-box">
-    <div id="minute" class="time-text">--</div>
-    <div id="dot" class="second-dot blink"></div>
+    <div id="minute" class="time-text">
+      <div class="minute-wrap">
+        <span id="min10" class="digit">-</span>
+        <span id="min1" class="digit">
+          -
+          <span class="second-dot"></span>
+        </span>
+      </div>
+    </div>
   </div>
 
   <div id="date" class="date">--</div>
@@ -136,77 +154,48 @@ body {
     <div id="temp" class="temp">--℃ / --℃（--℃）</div>
     <div id="rain" class="rain">☂️ --%</div>
   </div>
-
 </div>
 
 <script>
-const hour = document.getElementById("hour");
-const minute = document.getElementById("minute");
-const dateEl = document.getElementById("date");
-const dot = document.getElementById("dot");
+const hourEl = document.getElementById("hour");
+const min10El = document.getElementById("min10");
+const min1El  = document.getElementById("min1");
+const dateEl  = document.getElementById("date");
 
 let lastMinute = null;
 
-/* ===== 時刻 ===== */
 function updateTime() {
   const now = new Date();
+  const h = now.getHours();
+  const m = String(now.getMinutes()).padStart(2, "0");
 
-  const h = String(now.getHours()).padStart(2,"0");
-  const m = String(now.getMinutes()).padStart(2,"0");
+  hourEl.textContent = String(h).padStart(2, "0");
 
-  hour.textContent = h;
-
-  if (m !== lastMinute) {
-    minute.classList.remove("flip");
-    void minute.offsetWidth;
-    minute.classList.add("flip");
-    minute.textContent = m;
-    lastMinute = m;
+  if (lastMinute !== m) {
+    min10El.classList.add("flip");
+    min1El.classList.add("flip");
+    setTimeout(() => {
+      min10El.classList.remove("flip");
+      min1El.classList.remove("flip");
+    }, 400);
   }
+
+  min10El.textContent = m[0];
+  min1El.childNodes[0].nodeValue = m[1];
 
   const w = ["日","月","火","水","木","金","土"];
   dateEl.textContent = `${now.getMonth()+1}月${now.getDate()}日（${w[now.getDay()]}）`;
 
-  /* 夜背景 18〜翌5 */
-  const hourNum = now.getHours();
-  if (hourNum >= 18 || hourNum < 5) {
-    document.documentElement.style.setProperty("--bg", "#0b1d3a");
-  }
+  lastMinute = m;
+
+  /* 夜時間背景 */
+  let bg = "rgb(51,123,204)";
+  if (h >= 18 || h < 5) bg = "#0b1d3a";
+  document.documentElement.style.setProperty("--bg", bg);
 }
 
 updateTime();
 setInterval(updateTime, 1000);
-
-/* ===== 天気 ===== */
-async function fetchWeather() {
-  const url =
-    "https://api.open-meteo.com/v1/forecast" +
-    "?latitude=34.612&longitude=135.734" +
-    "&current=temperature_2m" +
-    "&daily=temperature_2m_max,temperature_2m_min,precipitation_probability_max,weather_code" +
-    "&timezone=Asia%2FTokyo";
-
-  const res = await fetch(url);
-  const data = await res.json();
-
-  const max = Math.round(data.daily.temperature_2m_max[0]);
-  const min = Math.round(data.daily.temperature_2m_min[0]);
-  const nowTemp = Math.round(data.current.temperature_2m);
-  const rainVal = data.daily.precipitation_probability_max[0];
-  const code = data.daily.weather_code[0];
-
-  let icon = "☀️";
-  if (code >= 1 && code <= 3) icon = "⛅";
-  else if (code >= 45) icon = "☁️";
-  if (rainVal >= 50) icon = "🌧️";
-
-  weatherIcon.textContent = icon;
-  temp.textContent = `${max}℃ / ${min}℃（${nowTemp}℃）`;
-  rain.textContent = rainVal !== undefined ? `☂️ ${rainVal}%` : "☂️ 未取得";
-}
-
-fetchWeather();
-setInterval(fetchWeather, 30 * 60 * 1000);
 </script>
 </body>
 </html>
