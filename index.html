@@ -47,28 +47,23 @@ body {
   align-items: center;
 }
 
-/* 桁コンテナ */
+/* ★ 2桁を箱で管理 */
 .time-digits {
-  display: flex;
-  gap: 2vw; /* ← 桁間スペース（重なり防止） */
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 4vw; /* ← ❘1❘と❘2❘の間を確実に確保 */
 }
 
-/* 各桁の箱 */
-.digit {
-  width: 26vw;      /* ← 桁の物理サイズ */
-  height: 38vh;
-  display: flex;
-  justify-content: center;
-  align-items: center;
-
+.time-digit {
   font-family: "Orbitron", sans-serif;
   font-weight: 900;
   font-size: 55vw;
   line-height: 1;
-  letter-spacing: -0.04em;
+  width: 1em;
+  text-align: center;
 }
 
-/* 分は少し詰める */
+/* 分は少し上に寄せる */
 .minute-box {
   height: 32vh;
   margin-top: -6vh;
@@ -107,16 +102,16 @@ body {
   <!-- 時 -->
   <div class="time-box">
     <div class="time-digits">
-      <span id="hour1" class="digit">-</span>
-      <span id="hour2" class="digit">-</span>
+      <span id="hour1" class="time-digit">-</span>
+      <span id="hour2" class="time-digit">-</span>
     </div>
   </div>
 
   <!-- 分 -->
   <div class="time-box minute-box">
     <div class="time-digits">
-      <span id="min1" class="digit">-</span>
-      <span id="min2" class="digit">-</span>
+      <span id="min1" class="time-digit">-</span>
+      <span id="min2" class="time-digit">-</span>
     </div>
   </div>
 
@@ -139,8 +134,8 @@ function updateTime() {
 
   hour1.textContent = h[0];
   hour2.textContent = h[1];
-  min1.textContent  = m[0];
-  min2.textContent  = m[1];
+  min1.textContent = m[0];
+  min2.textContent = m[1];
 
   const w = ["日","月","火","水","木","金","土"];
   date.textContent =
