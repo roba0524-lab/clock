@@ -50,18 +50,26 @@ body {
 /* ★ 2桁を箱で管理 */
 .time-digits {
   display: grid;
-  grid-template-columns: 1fr 1fr;
-  gap: 4vw; /* ← ❘1❘と❘2❘の間を確実に確保 */
+  grid-template-columns: repeat(2, 1fr);
+  gap: 2vw;
 }
 
 .time-digit {
   font-family: "Orbitron", sans-serif;
   font-weight: 900;
   font-size: 55vw;
+
+  width: 26vw;
+  height: 26vw;
+
+  display: flex;
+  align-items: center;
+  justify-content: center;
+
   line-height: 1;
-  width: 1em;
   text-align: center;
 }
+
 
 /* 分は少し上に寄せる */
 .minute-box {
@@ -186,3 +194,4 @@ setInterval(fetchWeather, 30 * 60 * 1000);
 </script>
 </body>
 </html>
+
