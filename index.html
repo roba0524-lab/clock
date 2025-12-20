@@ -53,28 +53,28 @@ body {
 
 @keyframes windMove {
   0% { 
-    transform: translateX(0) scaleX(0.5); 
+    transform: translateX(0) scaleX(3); 
     opacity: 0;
   }
   15% {
-    transform: translateX(5vw) scaleX(5);
+    transform: translateX(5vw) scaleX(7);
     opacity: 1;
   }
   30% {
-    transform: translateX(15vw) scaleX(7);
+    transform: translateX(15vw) scaleX(10);
   }
   50% {
-    transform: translateX(40vw) scaleX(9);
+    transform: translateX(40vw) scaleX(15);
   }
   70% {
-    transform: translateX(65vw) scaleX(12);
+    transform: translateX(65vw) scaleX(20);
   }
   85% {
-    transform: translateX(85vw) scaleX(15);
+    transform: translateX(85vw) scaleX(25);
     opacity: 1;
   }
   100% { 
-    transform: translateX(100vw) scaleX(20); 
+    transform: translateX(100vw) scaleX(30); 
     opacity: 0;
   }
 }
@@ -591,16 +591,16 @@ function updateWindEffect() {
   let duration, interval;
   
   if (currentWindSpeed <= 1.6) {
-    duration = 3; // 遅い
+    duration = 8; // 遅い
     interval = 15000; // 15秒に1回
   } else if (currentWindSpeed <= 3.4) {
-    duration = 2; // やや速い
+    duration = 6; // やや速い
     interval = 15000; // 15秒に1回
   } else if (currentWindSpeed <= 5.5) {
-    duration = 1.5; // やや速い
+    duration = 4; // やや速い
     interval = 7500; // 15秒に2回
   } else if (currentWindSpeed <= 8.0) {
-    duration = 1.2; // 速い
+    duration = 2; // 速い
     interval = 5000; // 15秒に3回
   } else if (currentWindSpeed <= 10.8) {
     duration = 1; // 速い
@@ -649,4 +649,3 @@ setInterval(toggleWindDisplay, 15000);
 
 </body>
 </html>
-
