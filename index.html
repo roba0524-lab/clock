@@ -33,7 +33,7 @@ body {
 }
 
 /* PC用レイアウト */
-@media (min-width: 768px) {
+@media (min-width: 768px), (orientation: landscape) and (max-width: 767px) {
   .container {
     gap: 8vh;
   }
@@ -114,7 +114,7 @@ body {
 }
 
 /* PC用横組み */
-@media (min-width: 768px) {
+@media (min-width: 768px), (orientation: landscape) and (max-width: 767px) {
   .time-wrapper {
     display: flex;
     align-items: center;
@@ -195,7 +195,7 @@ body {
   letter-spacing: -0.2em;
 }
 
-@media (min-width: 768px) {
+@media (min-width: 768px), (orientation: landscape) and (max-width: 767px) {
   .date {
     font-size: 3vw;
   }
@@ -251,7 +251,7 @@ body {
   font-size: 16vw;
 }
 
-@media (min-width: 768px) {
+@media (min-width: 768px), (orientation: landscape) and (max-width: 767px) {
   .weather-icon {
     font-size: 8vw;
   }
@@ -263,7 +263,7 @@ body {
   letter-spacing: -0.025em;
 }
 
-@media (min-width: 768px) {
+@media (min-width: 768px), (orientation: landscape) and (max-width: 767px) {
   .temp, .rain {
     font-size: 3vw;
   }
@@ -290,8 +290,8 @@ body {
   to { opacity: 1; }
 }
 
-/* PC表示時はドットを非表示 */
-@media (min-width: 768px) {
+/* PC・横向き表示時はドットを非表示 */
+@media (min-width: 768px), (orientation: landscape) and (max-width: 767px) {
   .edge-dot {
     display: none;
   }
