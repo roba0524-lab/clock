@@ -88,6 +88,24 @@ body {
   background: rgba(255, 255, 255, 0.95);
   color: var(--bg);
   border-radius: 4vw;
+  animation: bounceIn 0.8s cubic-bezier(0.68, -0.55, 0.27, 1.55) both;
+}
+
+/* 各桁を少しずつ遅延させる */
+#hourTen { animation-delay: 0s; }
+#hourOne { animation-delay: 0.1s; }
+#minTen { animation-delay: 0.2s; }
+#minOne { animation-delay: 0.3s; }
+
+@keyframes bounceIn {
+  0% {
+    transform: scale(0);
+    opacity: 0;
+  }
+  100% {
+    transform: scale(1);
+    opacity: 1;
+  }
 }
 
 .colon {
@@ -152,6 +170,8 @@ body {
   font-weight: 600;
   margin: 3px 0;
   letter-spacing: -0.025em;
+  animation: bounceIn 0.8s cubic-bezier(0.68, -0.55, 0.27, 1.55) both;
+  animation-delay: 0.4s;
 }
 
 .num-tight {
@@ -169,6 +189,21 @@ body {
   flex-direction: column;
   align-items: center;
   gap: 3px;
+}
+
+.weather-icon {
+  animation: bounceIn 0.8s cubic-bezier(0.68, -0.55, 0.27, 1.55) both;
+  animation-delay: 0.5s;
+}
+
+.temp {
+  animation: bounceIn 0.8s cubic-bezier(0.68, -0.55, 0.27, 1.55) both;
+  animation-delay: 0.6s;
+}
+
+.rain {
+  animation: bounceIn 0.8s cubic-bezier(0.68, -0.55, 0.27, 1.55) both;
+  animation-delay: 0.7s;
 }
 
 /* 天気情報スライドアニメーション */
