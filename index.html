@@ -104,22 +104,22 @@ body {
 
   .time-box {
     display: flex;
-    gap: 1vw;
+    gap: 1.5vw;
   }
 
   .digit {
-    width: 12vw;
-    height: 12vw;
-    font-size: 10.5vw;
+    width: 20vw;
+    height: 20vw;
+    font-size: 18vw;
     background: rgba(255, 255, 255, 0.95);
-    border-radius: 1.5vw;
+    border-radius: 2.5vw;
   }
 
   .colon {
     display: block;
     font-family: "Orbitron", sans-serif;
     font-weight: 900;
-    font-size: 20vw;
+    font-size: 18vw;
     line-height: 1;
     animation: blink 1s infinite;
   }
@@ -164,6 +164,30 @@ body {
   flex-direction: column;
   align-items: center;
   gap: 3px;
+}
+
+/* 天気情報スライドアニメーション */
+.weather-slide {
+  animation: slideWeather 0.8s cubic-bezier(0.68, -0.55, 0.27, 1.55);
+}
+
+@keyframes slideWeather {
+  0% {
+    transform: translateX(0);
+    opacity: 1;
+  }
+  40% {
+    transform: translateX(120vw);
+    opacity: 0;
+  }
+  60% {
+    transform: translateX(-120vw);
+    opacity: 0;
+  }
+  100% {
+    transform: translateX(0);
+    opacity: 1;
+  }
 }
 
 .weather-icon {
@@ -244,11 +268,13 @@ body {
 <script>
 /* ===== 時刻 ===== */
 let lastMinute = null;
+let lastSecond = null;
 
 function updateTime() {
   const now = new Date();
   const h = String(now.getHours()).padStart(2,"0");
   const m = String(now.getMinutes()).padStart(2,"0");
+  const s = now.getSeconds();
 
   hourTen.textContent = h[0];
   hourOne.textContent = h[1];
@@ -263,6 +289,15 @@ function updateTime() {
     minOne.textContent = m[1];
     lastMinute = m;
   }
+
+  // 毎分0秒で天気情報スライド
+  if (s === 0 && s !== lastSecond) {
+    const weatherEl = document.querySelector(".weather");
+    weatherEl.classList.remove("weather-slide");
+    void weatherEl.offsetWidth;
+    weatherEl.classList.add("weather-slide");
+  }
+  lastSecond = s;
 
   const w = ["日","月","火","水","木","金","土"];
   date.textContent = `${now.getMonth()+1}月${now.getDate()}日（${w[now.getDay()]}）`;
