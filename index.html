@@ -13,6 +13,8 @@
 :root {
   --bg: rgb(51,123,204);
   --text: #ffffff;
+  --wind-duration: 3s;
+  --wind-count: 5;
 }
 
 body {
@@ -23,7 +25,63 @@ body {
   font-family: -apple-system, BlinkMacSystemFont, sans-serif;
 }
 
+/* ===== 風エフェクト ===== */
+.wind-lines {
+  position: fixed;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  pointer-events: none;
+  overflow: hidden;
+  z-index: 1;
+}
+
+.wind-line {
+  position: absolute;
+  width: 200vw;
+  height: 100%;
+  left: -100vw;
+  background: transparent;
+  opacity: 0;
+}
+
+.wind-line svg {
+  width: 100%;
+  height: 100%;
+}
+
+@keyframes windMove {
+  0% { 
+    transform: translateX(0) scaleX(0.5); 
+    opacity: 0;
+  }
+  15% {
+    transform: translateX(5vw) scaleX(5);
+    opacity: 1;
+  }
+  30% {
+    transform: translateX(15vw) scaleX(7);
+  }
+  50% {
+    transform: translateX(40vw) scaleX(9);
+  }
+  70% {
+    transform: translateX(65vw) scaleX(12);
+  }
+  85% {
+    transform: translateX(85vw) scaleX(5);
+    opacity: 1;
+  }
+  100% { 
+    transform: translateX(100vw) scaleX(0.5); 
+    opacity: 0;
+  }
+}
+
 .container {
+  position: relative;
+  z-index: 2;
   min-height: 100vh;
   display: flex;
   flex-direction: column;
@@ -55,22 +113,6 @@ body {
 
 .time-box {
   display: contents;
-}
-
-.time-box.hour {
-  /* grid上で自動配置 */
-}
-
-.time-box.minute {
-  /* grid上で自動配置 */
-}
-
-.time-text {
-  font-family: "Orbitron", sans-serif;
-  font-weight: 900;
-  font-size: 55vw;
-  line-height: 1;
-  letter-spacing: -0.04em;
 }
 
 /* スマホ用：各桁を固定幅ボックスに */
@@ -221,6 +263,28 @@ body {
 .rain {
   animation: bounceIn 0.8s cubic-bezier(0.68, -0.55, 0.27, 1.55) both;
   animation-delay: 0.7s;
+  position: relative;
+}
+
+.rain .wind-display {
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  opacity: 0;
+  transition: opacity 0.5s;
+}
+
+.rain .wind-display.show {
+  opacity: 1;
+}
+
+.rain .rain-display {
+  transition: opacity 0.5s;
+}
+
+.rain .rain-display.hide {
+  opacity: 0;
 }
 
 /* 天気情報スライドアニメーション */
@@ -308,6 +372,37 @@ body {
 
 <body>
 
+<div class="wind-lines">
+  <div class="wind-line">
+    <svg viewBox="0 0 200 100" preserveAspectRatio="none">
+      <defs>
+        <linearGradient id="waveGrad" x1="0%" y1="0%" x2="100%" y2="0%">
+          <stop offset="0%" style="stop-color:white;stop-opacity:0" />
+          <stop offset="15%" style="stop-color:white;stop-opacity:0.3" />
+          <stop offset="25%" style="stop-color:white;stop-opacity:0.6" />
+          <stop offset="35%" style="stop-color:white;stop-opacity:0.3" />
+          <stop offset="50%" style="stop-color:white;stop-opacity:0" />
+          <stop offset="65%" style="stop-color:white;stop-opacity:0.3" />
+          <stop offset="75%" style="stop-color:white;stop-opacity:0.6" />
+          <stop offset="85%" style="stop-color:white;stop-opacity:0.3" />
+          <stop offset="100%" style="stop-color:white;stop-opacity:0" />
+        </linearGradient>
+      </defs>
+      <path d="M0,50 Q25,10 50,50 T100,50 T150,50 T200,50" 
+            fill="none" 
+            stroke="url(#waveGrad)" 
+            stroke-width="40" 
+            stroke-linecap="round"/>
+      <path d="M0,55 Q25,15 50,55 T100,55 T150,55 T200,55" 
+            fill="none" 
+            stroke="url(#waveGrad)" 
+            stroke-width="20" 
+            stroke-linecap="round"
+            opacity="0.5"/>
+    </svg>
+  </div>
+</div>
+
 <div class="container">
   <div class="time-wrapper">
     <div class="time-box hour">
@@ -326,7 +421,10 @@ body {
   <div class="weather">
     <div id="weatherIcon" class="weather-icon">--</div>
     <div id="temp" class="temp">--℃ / --℃（--℃）</div>
-    <div id="rain" class="rain">☂️ --%</div>
+    <div id="rain" class="rain">
+      <div class="rain-display">☂️ --%</div>
+      <div class="wind-display">🌬️ --m/s</div>
+    </div>
   </div>
 </div>
 
@@ -336,7 +434,7 @@ body {
 /* ===== 時刻 ===== */
 let lastMinute = null;
 let lastSecond = null;
-let isInitialLoad = true; // 初回読み込みフラグ
+let isInitialLoad = true;
 
 // 半角→全角変換関数
 function toFullWidth(str) {
@@ -358,7 +456,6 @@ function updateTime() {
   hourOne.textContent = h[1];
 
   if (m !== lastMinute) {
-    // 初回読み込み時はflipアニメーションをスキップ
     if (!isInitialLoad) {
       minTen.classList.remove("flip");
       minOne.classList.remove("flip");
@@ -369,7 +466,7 @@ function updateTime() {
     minTen.textContent = m[0];
     minOne.textContent = m[1];
     lastMinute = m;
-    isInitialLoad = false; // 初回読み込み完了
+    isInitialLoad = false;
   }
 
   // 毎分0秒で天気情報スライド
@@ -413,7 +510,7 @@ function updateEdgeDot() {
   const h = window.innerHeight;
   const perimeter = 2 * (w + h);
 
-  const offset = w / 2; // ← 上中央スタート
+  const offset = w / 2;
   let d = (sec / 60) * perimeter + offset;
   d %= perimeter;
 
@@ -440,11 +537,13 @@ function updateEdgeDot() {
 setInterval(updateEdgeDot, 16);
 
 /* ===== 天気 ===== */
+let currentWindSpeed = 0;
+
 async function fetchWeather() {
   const url =
     "https://api.open-meteo.com/v1/forecast" +
     "?latitude=34.612&longitude=135.734" +
-    "&current=temperature_2m" +
+    "&current=temperature_2m,wind_speed_10m" +
     "&daily=temperature_2m_max,temperature_2m_min,precipitation_probability_max,weather_code" +
     "&timezone=Asia%2FTokyo";
 
@@ -456,6 +555,7 @@ async function fetchWeather() {
   const nowTemp = Math.round(data.current.temperature_2m);
   const rainVal = data.daily.precipitation_probability_max[0];
   const code = data.daily.weather_code[0];
+  currentWindSpeed = data.current.wind_speed_10m / 3.6;
 
   let icon = "☀️";
   if (code >= 1 && code <= 3) icon = "⛅";
@@ -468,11 +568,83 @@ async function fetchWeather() {
   temp.innerHTML = wrapNumbers(tempStr);
   
   const rainStr = `☂️ ${toFullWidth(String(rainVal))}%`;
-  rain.innerHTML = wrapNumbers(rainStr);
+  document.querySelector('.rain-display').innerHTML = wrapNumbers(rainStr);
+  
+  const windStr = `🌬️ ${toFullWidth(String(Math.round(currentWindSpeed)))}m/s`;
+  document.querySelector('.wind-display').innerHTML = `<span style="white-space: nowrap;">${wrapNumbers(windStr)}</span>`;
+  
+  updateWindEffect();
+}
+
+// 風エフェクト更新
+function updateWindEffect() {
+  const windLine = document.querySelector('.wind-line');
+  const root = document.documentElement;
+  
+  if (currentWindSpeed === 0) {
+    windLine.style.display = 'none';
+    return;
+  }
+  
+  windLine.style.display = 'block';
+  
+  let duration, interval;
+  
+  if (currentWindSpeed <= 1.6) {
+    duration = 3; // 遅い
+    interval = 15000; // 15秒に1回
+  } else if (currentWindSpeed <= 3.4) {
+    duration = 2; // やや速い
+    interval = 15000; // 15秒に1回
+  } else if (currentWindSpeed <= 5.5) {
+    duration = 1.5; // やや速い
+    interval = 7500; // 15秒に2回
+  } else if (currentWindSpeed <= 8.0) {
+    duration = 1.2; // 速い
+    interval = 5000; // 15秒に3回
+  } else if (currentWindSpeed <= 10.8) {
+    duration = 1; // 速い
+    interval = 3750; // 15秒に4回
+  } else {
+    duration = 0.8; // 超速い
+    interval = 3000; // 15秒に5回
+  }
+  
+  root.style.setProperty('--wind-duration', `${duration}s`);
+  
+  // 既存のインターバルをクリア
+  if (window.windInterval) {
+    clearInterval(window.windInterval);
+  }
+  
+  // 風のアニメーションを定期的にトリガー
+  function triggerWind() {
+    windLine.style.animation = 'none';
+    void windLine.offsetWidth;
+    windLine.style.animation = `windMove ${duration}s linear`;
+  }
+  
+  triggerWind(); // 初回実行
+  window.windInterval = setInterval(triggerWind, interval);
+}
+
+// 15秒に1回、5秒間風速表示
+function toggleWindDisplay() {
+  const rainDisplay = document.querySelector('.rain-display');
+  const windDisplay = document.querySelector('.wind-display');
+  
+  rainDisplay.classList.add('hide');
+  windDisplay.classList.add('show');
+  
+  setTimeout(() => {
+    rainDisplay.classList.remove('hide');
+    windDisplay.classList.remove('show');
+  }, 5000);
 }
 
 fetchWeather();
 setInterval(fetchWeather, 30 * 60 * 1000);
+setInterval(toggleWindDisplay, 15000);
 </script>
 
 </body>
