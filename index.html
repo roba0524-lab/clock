@@ -53,7 +53,7 @@ body {
 
 @keyframes windMove {
   0% { 
-    transform: translateX(0) scaleX(5); 
+    transform: translateX(0) scaleX(2); 
     opacity: 0;
   }
   15% {
@@ -484,11 +484,7 @@ function updateTime() {
   const dateStr = `${month}月${day}日（${w[now.getDay()]}）`;
   date.innerHTML = wrapNumbers(dateStr);
 
-  if (now.getHours() >= 18 || now.getHours() < 5) {
-    document.documentElement.style.setProperty("--bg", "#0b1d3a");
-  } else {
-    document.documentElement.style.setProperty("--bg", "rgb(51,123,204)");
-  }
+  // 時刻による背景色変更は天気APIの取得後に処理
 }
 
 updateTime();
@@ -558,9 +554,23 @@ async function fetchWeather() {
   currentWindSpeed = data.current.wind_speed_10m / 3.6;
 
   let icon = "☀️";
-  if (code >= 1 && code <= 3) icon = "⛅";
-  else if (code >= 45) icon = "☁️";
-  if (rainVal >= 50) icon = "🌧️";
+  let bgColor = "rgb(51,123,204)"; // デフォルトはブルー
+  
+  if (code >= 1 && code <= 3) {
+    icon = "⛅";
+    bgColor = "rgb(51,123,204)"; // 曇り系はブルー
+  } else if (code >= 45) {
+    icon = "☁️";
+    bgColor = "rgb(51,123,204)"; // 曇りはブルー
+  } else {
+    // 晴れ
+    bgColor = "rgb(255,140,60)"; // オレンジ
+  }
+  
+  if (rainVal >= 35) {
+    icon = "🌧️";
+    bgColor = "rgb(120,120,120)"; // グレー
+  }
 
   weatherIcon.textContent = icon;
   
@@ -572,6 +582,14 @@ async function fetchWeather() {
   
   const windStr = `🌬️ ${toFullWidth(String(Math.round(currentWindSpeed)))}m/s`;
   document.querySelector('.wind-display').innerHTML = `<span style="white-space: nowrap;">${wrapNumbers(windStr)}</span>`;
+  
+  // 背景色を設定(夜は常にダークブルー)
+  const now = new Date();
+  if (now.getHours() >= 18 || now.getHours() < 5) {
+    document.documentElement.style.setProperty("--bg", "#0b1d3a");
+  } else {
+    document.documentElement.style.setProperty("--bg", bgColor);
+  }
   
   updateWindEffect();
 }
@@ -649,4 +667,3 @@ setInterval(toggleWindDisplay, 15000);
 
 </body>
 </html>
-
