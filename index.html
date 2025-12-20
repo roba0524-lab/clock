@@ -110,6 +110,7 @@ body {
 
 .colon {
   display: none;
+  opacity: 0;
 }
 
 /* PC用横組み */
@@ -134,17 +135,33 @@ body {
   }
 
   .colon {
-    display: block;
-    font-family: "Orbitron", sans-serif;
-    font-weight: 900;
-    font-size: 18vw;
-    line-height: 1;
-    animation: blink 1s infinite;
+    display: flex;
+    flex-direction: column;
+    gap: 2vw;
+    align-items: center;
+    justify-content: center;
+    opacity: 0;
+    animation: fadeInColon 0.5s 0.8s forwards, blinkColon 2s 1.3s infinite ease-in-out;
   }
 
-  @keyframes blink {
-    0%, 49% { opacity: 1; }
-    50%, 100% { opacity: 0; }
+  .colon::before,
+  .colon::after {
+    content: "";
+    width: 3vw;
+    height: 3vw;
+    background: white;
+    border-radius: 50%;
+  }
+
+  @keyframes fadeInColon {
+    from { opacity: 0; }
+    to { opacity: 1; }
+  }
+
+  @keyframes blinkColon {
+    0%, 40% { opacity: 1; }
+    50%, 90% { opacity: 0; }
+    100% { opacity: 1; }
   }
 }
 
@@ -261,7 +278,12 @@ body {
   border-radius: 50%;
   opacity: 0;
   pointer-events: none;
-  animation: fade 1s infinite;
+  animation: fade 1s infinite, fadeInDot 0.5s 0.8s forwards;
+}
+
+@keyframes fadeInDot {
+  from { opacity: 0; }
+  to { opacity: 1; }
 }
 
 /* PC表示時はドットを非表示 */
@@ -288,7 +310,7 @@ body {
       <div class="digit" id="hourTen">-</div>
       <div class="digit" id="hourOne">-</div>
     </div>
-    <div class="colon">:</div>
+    <div class="colon"></div>
     <div class="time-box minute">
       <div class="digit" id="minTen">-</div>
       <div class="digit" id="minOne">-</div>
@@ -310,6 +332,7 @@ body {
 /* ===== 時刻 ===== */
 let lastMinute = null;
 let lastSecond = null;
+let isInitialLoad = true; // 初回読み込みフラグ
 
 // 半角→全角変換関数
 function toFullWidth(str) {
@@ -331,14 +354,18 @@ function updateTime() {
   hourOne.textContent = h[1];
 
   if (m !== lastMinute) {
-    minTen.classList.remove("flip");
-    minOne.classList.remove("flip");
-    void minTen.offsetWidth;
-    minTen.classList.add("flip");
-    minOne.classList.add("flip");
+    // 初回読み込み時はflipアニメーションをスキップ
+    if (!isInitialLoad) {
+      minTen.classList.remove("flip");
+      minOne.classList.remove("flip");
+      void minTen.offsetWidth;
+      minTen.classList.add("flip");
+      minOne.classList.add("flip");
+    }
     minTen.textContent = m[0];
     minOne.textContent = m[1];
     lastMinute = m;
+    isInitialLoad = false; // 初回読み込み完了
   }
 
   // 毎分0秒で天気情報スライド
