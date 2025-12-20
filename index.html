@@ -32,6 +32,13 @@ body {
   animation: burnin 180s infinite alternate ease-in-out;
 }
 
+/* PC用レイアウト */
+@media (min-width: 768px) {
+  .container {
+    gap: 8vh;
+  }
+}
+
 /* 焼き付き防止 */
 @keyframes burnin {
   from { transform: translate(0,0); }
@@ -39,23 +46,23 @@ body {
 }
 
 /* ===== 時刻 ===== */
+.time-wrapper {
+  display: grid;
+  grid-template-columns: repeat(2, 42vw);
+  grid-template-rows: repeat(2, 42vw);
+  gap: 3vw;
+}
+
 .time-box {
-  width: 100vw;
-  height: 38vh;
-  display: flex;
-  align-items: center;
+  display: contents;
 }
 
 .time-box.hour {
-  justify-content: flex-start;
-  padding-left: 8vw;
+  /* grid上で自動配置 */
 }
 
 .time-box.minute {
-  justify-content: flex-end;
-  padding-right: 8vw;
-  height: 32vh;
-  margin-top: -6vh;
+  /* grid上で自動配置 */
 }
 
 .time-text {
@@ -64,6 +71,63 @@ body {
   font-size: 55vw;
   line-height: 1;
   letter-spacing: -0.04em;
+}
+
+/* スマホ用：各桁を固定幅ボックスに */
+.digit {
+  width: 42vw;
+  height: 42vw;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  text-align: center;
+  font-family: "Orbitron", sans-serif;
+  font-weight: 900;
+  font-size: 38vw;
+  line-height: 1;
+  background: rgba(255, 255, 255, 0.95);
+  color: var(--bg);
+  border-radius: 4vw;
+}
+
+.colon {
+  display: none;
+}
+
+/* PC用横組み */
+@media (min-width: 768px) {
+  .time-wrapper {
+    display: flex;
+    align-items: center;
+    gap: 2vw;
+  }
+
+  .time-box {
+    display: flex;
+    gap: 1vw;
+  }
+
+  .digit {
+    width: 12vw;
+    height: 12vw;
+    font-size: 10.5vw;
+    background: rgba(255, 255, 255, 0.95);
+    border-radius: 1.5vw;
+  }
+
+  .colon {
+    display: block;
+    font-family: "Orbitron", sans-serif;
+    font-weight: 900;
+    font-size: 20vw;
+    line-height: 1;
+    animation: blink 1s infinite;
+  }
+
+  @keyframes blink {
+    0%, 49% { opacity: 1; }
+    50%, 100% { opacity: 0; }
+  }
 }
 
 /* 分切り替え */
@@ -89,6 +153,12 @@ body {
   margin: 3px 0;
 }
 
+@media (min-width: 768px) {
+  .date {
+    font-size: 3vw;
+  }
+}
+
 .weather {
   display: flex;
   flex-direction: column;
@@ -100,9 +170,21 @@ body {
   font-size: 16vw;
 }
 
+@media (min-width: 768px) {
+  .weather-icon {
+    font-size: 8vw;
+  }
+}
+
 .temp, .rain {
   font-size: 6.5vw;
   font-weight: 700;
+}
+
+@media (min-width: 768px) {
+  .temp, .rain {
+    font-size: 3vw;
+  }
 }
 
 /* ===== 外周ドット ===== */
@@ -117,6 +199,13 @@ body {
   animation: fade 1s infinite;
 }
 
+/* PC表示時はドットを非表示 */
+@media (min-width: 768px) {
+  .edge-dot {
+    display: none;
+  }
+}
+
 @keyframes fade {
   0%   { opacity: 0; }
   30%  { opacity: 0.9; }
@@ -129,12 +218,16 @@ body {
 <body>
 
 <div class="container">
-  <div class="time-box hour">
-    <div id="hour" class="time-text">--</div>
-  </div>
-
-  <div class="time-box minute">
-    <div id="minute" class="time-text">--</div>
+  <div class="time-wrapper">
+    <div class="time-box hour">
+      <div class="digit" id="hourTen">-</div>
+      <div class="digit" id="hourOne">-</div>
+    </div>
+    <div class="colon">:</div>
+    <div class="time-box minute">
+      <div class="digit" id="minTen">-</div>
+      <div class="digit" id="minOne">-</div>
+    </div>
   </div>
 
   <div id="date" class="date">--</div>
@@ -157,13 +250,17 @@ function updateTime() {
   const h = String(now.getHours()).padStart(2,"0");
   const m = String(now.getMinutes()).padStart(2,"0");
 
-  hour.textContent = h;
+  hourTen.textContent = h[0];
+  hourOne.textContent = h[1];
 
   if (m !== lastMinute) {
-    minute.classList.remove("flip");
-    void minute.offsetWidth;
-    minute.classList.add("flip");
-    minute.textContent = m;
+    minTen.classList.remove("flip");
+    minOne.classList.remove("flip");
+    void minTen.offsetWidth;
+    minTen.classList.add("flip");
+    minOne.classList.add("flip");
+    minTen.textContent = m[0];
+    minOne.textContent = m[1];
     lastMinute = m;
   }
 
