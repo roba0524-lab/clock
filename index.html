@@ -278,7 +278,11 @@ body {
   border-radius: 50%;
   opacity: 0;
   pointer-events: none;
-  animation: fade 1s infinite, fadeInDot 0.5s 0.8s forwards;
+}
+
+/* リフレッシュ後にフェードイン&点滅開始 */
+.edge-dot.active {
+  animation: fade 1s infinite;
 }
 
 @keyframes fadeInDot {
@@ -392,6 +396,11 @@ function updateTime() {
 
 updateTime();
 setInterval(updateTime, 1000);
+
+// 0.8秒後にドットの点滅を開始
+setTimeout(() => {
+  dot.classList.add('active');
+}, 800);
 
 /* ===== 外周ドット（上中央スタート） ===== */
 const dot = document.getElementById("edgeDot");
