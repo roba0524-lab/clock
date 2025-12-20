@@ -151,6 +151,11 @@ body {
   font-size: 6vw;
   font-weight: 600;
   margin: 3px 0;
+  letter-spacing: -0.025em;
+}
+
+.num-tight {
+  letter-spacing: -0.2em;
 }
 
 @media (min-width: 768px) {
@@ -203,6 +208,7 @@ body {
 .temp, .rain {
   font-size: 6.5vw;
   font-weight: 700;
+  letter-spacing: -0.025em;
 }
 
 @media (min-width: 768px) {
@@ -270,6 +276,16 @@ body {
 let lastMinute = null;
 let lastSecond = null;
 
+// 半角→全角変換関数
+function toFullWidth(str) {
+  return str.replace(/[0-9]/g, (s) => String.fromCharCode(s.charCodeAt(0) + 0xFEE0));
+}
+
+// 数字部分だけspanで囲む関数
+function wrapNumbers(str) {
+  return str.replace(/[０-９]+/g, (match) => `<span class="num-tight">${match}</span>`);
+}
+
 function updateTime() {
   const now = new Date();
   const h = String(now.getHours()).padStart(2,"0");
@@ -300,7 +316,10 @@ function updateTime() {
   lastSecond = s;
 
   const w = ["日","月","火","水","木","金","土"];
-  date.textContent = `${now.getMonth()+1}月${now.getDate()}日（${w[now.getDay()]}）`;
+  const month = toFullWidth(String(now.getMonth() + 1));
+  const day = toFullWidth(String(now.getDate()));
+  const dateStr = `${month}月${day}日（${w[now.getDay()]}）`;
+  date.innerHTML = wrapNumbers(dateStr);
 
   if (now.getHours() >= 18 || now.getHours() < 5) {
     document.documentElement.style.setProperty("--bg", "#0b1d3a");
@@ -373,8 +392,12 @@ async function fetchWeather() {
   if (rainVal >= 50) icon = "🌧️";
 
   weatherIcon.textContent = icon;
-  temp.textContent = `${max}℃ / ${min}℃（${nowTemp}℃）`;
-  rain.textContent = `☂️ ${rainVal}%`;
+  
+  const tempStr = `${toFullWidth(String(max))}℃ / ${toFullWidth(String(min))}℃（${toFullWidth(String(nowTemp))}℃）`;
+  temp.innerHTML = wrapNumbers(tempStr);
+  
+  const rainStr = `☂️ ${toFullWidth(String(rainVal))}%`;
+  rain.innerHTML = wrapNumbers(rainStr);
 }
 
 fetchWeather();
