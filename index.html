@@ -21,9 +21,13 @@ body {
   margin: 0;
   background: var(--bg);
   color: var(--text);
+  overflow: hidden;
+  font-family: -apple-system, BlinkMacSystemFont, sans-serif;
+}
+
+body.allow-scroll {
   overflow-y: auto;
   overflow-x: hidden;
-  font-family: -apple-system, BlinkMacSystemFont, sans-serif;
 }
 
 /* ===== 風エフェクト ===== */
@@ -397,8 +401,9 @@ body {
 }
 
 .forecast-date {
-  width: 25vw;
+  width: 30vw;
   text-align: left;
+  white-space: nowrap;
 }
 
 .forecast-icon {
@@ -420,22 +425,40 @@ body {
 }
 
 @media (min-width: 768px), (orientation: landscape) and (max-width: 767px) {
+  .weekly-forecast {
+    flex-direction: row;
+    flex-wrap: wrap;
+    justify-content: center;
+    gap: 3vw;
+  }
+  
   .forecast-item {
-    font-size: 2.5vw;
-    gap: 2vw;
+    font-size: 2vw;
+    flex-direction: column;
+    width: auto;
+    gap: 1vh;
+    text-align: center;
   }
   
   .forecast-date {
-    width: 15vw;
+    width: auto;
+    font-size: 2.5vw;
+    text-align: center;
   }
   
   .forecast-icon {
-    font-size: 4vw;
-    width: 5vw;
+    font-size: 5vw;
+    width: auto;
   }
   
   .forecast-temp {
-    width: 10vw;
+    width: auto;
+    font-size: 2vw;
+  }
+  
+  .forecast-rain {
+    justify-content: center;
+    font-size: 2vw;
   }
 }
 
@@ -596,6 +619,20 @@ function updateTime() {
 updateTime();
 setInterval(updateTime, 1000);
 
+// スクロールボタンの表示状態をチェック
+function checkScrollButtonVisibility() {
+  if (window.innerHeight <= 600 && window.innerWidth <= 600) {
+    // 小さい画面ではボタン非表示で手動スクロール可能
+    document.body.classList.add('allow-scroll');
+  } else {
+    // ボタン表示で手動スクロール不可
+    document.body.classList.remove('allow-scroll');
+  }
+}
+
+checkScrollButtonVisibility();
+window.addEventListener('resize', checkScrollButtonVisibility);
+
 // 0.8秒後にドットの点滅を開始
 setTimeout(() => {
   if (dot && dot.classList) {
@@ -735,7 +772,7 @@ function updateWeeklyForecast(data) {
       <div class="forecast-date">${wrapNumbers(`${month}/${day}（${dayOfWeek}）`)}</div>
       <div class="forecast-icon">${weatherIcon}</div>
       <div class="forecast-temp">${wrapNumbers(`${toFullWidth(String(min))}℃`)}</div>
-      <div class="forecast-rain">☂️ ${wrapNumbers(`${toFullWidth(String(rainProb))}%`)}</div>
+      <div class="forecast-rain">☂️${wrapNumbers(`${toFullWidth(String(rainProb))}%`)}</div>
     `;
     
     weeklyContainer.appendChild(item);
@@ -818,11 +855,17 @@ const scrollUpBtn = document.getElementById('scrollUpBtn');
 const windLines = document.querySelector('.wind-lines');
 const edgeDot = document.getElementById('edgeDot');
 
+// スクロール中は手動スクロール無効
+let isScrolling = false;
+
 scrollDownBtn.addEventListener('click', () => {
+  if (isScrolling) return;
+  isScrolling = true;
+  
   const start = window.scrollY;
   const target = window.innerHeight;
   const distance = target - start;
-  const duration = 800; // ギューンと感を出すため少し長めに
+  const duration = 800;
   let startTime = null;
 
   function animation(currentTime) {
@@ -830,13 +873,14 @@ scrollDownBtn.addEventListener('click', () => {
     const timeElapsed = currentTime - startTime;
     const progress = Math.min(timeElapsed / duration, 1);
     
-    // イージング関数（ease-out-quart）加速して減速
     const ease = 1 - Math.pow(1 - progress, 4);
     
     window.scrollTo(0, start + distance * ease);
     
     if (progress < 1) {
       requestAnimationFrame(animation);
+    } else {
+      isScrolling = false;
     }
   }
   
@@ -844,6 +888,9 @@ scrollDownBtn.addEventListener('click', () => {
 });
 
 scrollUpBtn.addEventListener('click', () => {
+  if (isScrolling) return;
+  isScrolling = true;
+  
   const start = window.scrollY;
   const target = 0;
   const distance = target - start;
@@ -855,13 +902,14 @@ scrollUpBtn.addEventListener('click', () => {
     const timeElapsed = currentTime - startTime;
     const progress = Math.min(timeElapsed / duration, 1);
     
-    // イージング関数（ease-out-quart）
     const ease = 1 - Math.pow(1 - progress, 4);
     
     window.scrollTo(0, start + distance * ease);
     
     if (progress < 1) {
       requestAnimationFrame(animation);
+    } else {
+      isScrolling = false;
     }
   }
   
