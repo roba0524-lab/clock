@@ -21,7 +21,8 @@ body {
   margin: 0;
   background: var(--bg);
   color: var(--text);
-  overflow: hidden;
+  overflow-y: auto;
+  overflow-x: hidden;
   font-family: -apple-system, BlinkMacSystemFont, sans-serif;
 }
 
@@ -35,6 +36,7 @@ body {
   pointer-events: none;
   overflow: hidden;
   z-index: 1;
+  transition: opacity 0.3s;
 }
 
 .wind-line {
@@ -342,6 +344,7 @@ body {
   border-radius: 50%;
   opacity: 0;
   pointer-events: none;
+  transition: opacity 0.3s;
 }
 
 /* リフレッシュ後にフェードイン&点滅開始 */
@@ -367,6 +370,102 @@ body {
   60%  { opacity: 0.3; }
   100% { opacity: 0; }
 }
+
+/* ===== 週間予報 ===== */
+.weekly-forecast {
+  position: relative;
+  z-index: 2;
+  min-height: 100vh;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  padding: 5vh 5vw;
+  gap: 2vh;
+}
+
+.forecast-item {
+  font-family: "Zen Kaku Gothic New", sans-serif;
+  font-size: 5vw;
+  font-weight: 600;
+  letter-spacing: -0.025em;
+  display: flex;
+  align-items: center;
+  gap: 3vw;
+  width: 90vw;
+  max-width: 600px;
+}
+
+.forecast-date {
+  width: 25vw;
+  text-align: left;
+}
+
+.forecast-icon {
+  font-size: 8vw;
+  width: 10vw;
+  text-align: center;
+}
+
+.forecast-temp {
+  width: 20vw;
+  text-align: center;
+}
+
+.forecast-rain {
+  display: flex;
+  align-items: center;
+  gap: 1vw;
+  flex: 1;
+}
+
+@media (min-width: 768px), (orientation: landscape) and (max-width: 767px) {
+  .forecast-item {
+    font-size: 2.5vw;
+    gap: 2vw;
+  }
+  
+  .forecast-date {
+    width: 15vw;
+  }
+  
+  .forecast-icon {
+    font-size: 4vw;
+    width: 5vw;
+  }
+  
+  .forecast-temp {
+    width: 10vw;
+  }
+}
+
+/* ===== スクロールボタン ===== */
+.scroll-button {
+  position: fixed;
+  bottom: 5vh;
+  right: 5vw;
+  font-size: 10vw;
+  color: rgba(255, 255, 255, 0.4);
+  cursor: pointer;
+  z-index: 100;
+  transition: color 0.3s;
+  user-select: none;
+}
+
+.scroll-button:hover {
+  color: rgba(255, 255, 255, 0.7);
+}
+
+.scroll-button.hidden {
+  display: none;
+}
+
+@media (max-height: 600px) and (max-width: 600px) {
+  .scroll-button {
+    display: none !important;
+  }
+}
+
 </style>
 </head>
 
@@ -428,7 +527,14 @@ body {
   </div>
 </div>
 
+<div class="weekly-forecast" id="weeklyForecast">
+  <!-- 7日分の予報がここに挿入されます -->
+</div>
+
 <div id="edgeDot" class="edge-dot"></div>
+
+<div class="scroll-button" id="scrollDownBtn">▼</div>
+<div class="scroll-button hidden" id="scrollUpBtn">▲</div>
 
 <script>
 /* ===== 時刻 ===== */
@@ -492,7 +598,9 @@ setInterval(updateTime, 1000);
 
 // 0.8秒後にドットの点滅を開始
 setTimeout(() => {
-  dot.classList.add('active');
+  if (dot && dot.classList) {
+    dot.classList.add('active');
+  }
 }, 800);
 
 /* ===== 外周ドット（上中央スタート） ===== */
@@ -541,7 +649,8 @@ async function fetchWeather() {
     "?latitude=34.612&longitude=135.734" +
     "&current=temperature_2m,wind_speed_10m" +
     "&daily=temperature_2m_max,temperature_2m_min,precipitation_probability_max,weather_code" +
-    "&timezone=Asia%2FTokyo";
+    "&timezone=Asia%2FTokyo" +
+    "&forecast_days=7";
 
   const res = await fetch(url);
   const data = await res.json();
@@ -591,7 +700,46 @@ async function fetchWeather() {
     document.documentElement.style.setProperty("--bg", bgColor);
   }
   
+  // 週間予報を更新
+  updateWeeklyForecast(data);
+  
   updateWindEffect();
+}
+
+// 週間予報を表示
+function updateWeeklyForecast(data) {
+  const weeklyContainer = document.getElementById('weeklyForecast');
+  weeklyContainer.innerHTML = '';
+  
+  const dayNames = ["日","月","火","水","木","金","土"];
+  
+  for (let i = 0; i < 7; i++) {
+    const date = new Date(data.daily.time[i]);
+    const month = toFullWidth(String(date.getMonth() + 1));
+    const day = toFullWidth(String(date.getDate()));
+    const dayOfWeek = dayNames[date.getDay()];
+    
+    const max = Math.round(data.daily.temperature_2m_max[i]);
+    const min = Math.round(data.daily.temperature_2m_min[i]);
+    const rainProb = data.daily.precipitation_probability_max[i];
+    const code = data.daily.weather_code[i];
+    
+    let weatherIcon = "☀️";
+    if (code >= 1 && code <= 3) weatherIcon = "⛅";
+    else if (code >= 45) weatherIcon = "☁️";
+    if (rainProb >= 50) weatherIcon = "🌧️";
+    
+    const item = document.createElement('div');
+    item.className = 'forecast-item';
+    item.innerHTML = `
+      <div class="forecast-date">${wrapNumbers(`${month}/${day}（${dayOfWeek}）`)}</div>
+      <div class="forecast-icon">${weatherIcon}</div>
+      <div class="forecast-temp">${wrapNumbers(`${toFullWidth(String(min))}℃`)}</div>
+      <div class="forecast-rain">☂️ ${wrapNumbers(`${toFullWidth(String(rainProb))}%`)}</div>
+    `;
+    
+    weeklyContainer.appendChild(item);
+  }
 }
 
 // 風エフェクト更新
@@ -663,6 +811,100 @@ function toggleWindDisplay() {
 fetchWeather();
 setInterval(fetchWeather, 30 * 60 * 1000);
 setInterval(toggleWindDisplay, 15000);
+
+/* ===== スクロール制御 ===== */
+const scrollDownBtn = document.getElementById('scrollDownBtn');
+const scrollUpBtn = document.getElementById('scrollUpBtn');
+const windLines = document.querySelector('.wind-lines');
+const edgeDot = document.getElementById('edgeDot');
+
+scrollDownBtn.addEventListener('click', () => {
+  const start = window.scrollY;
+  const target = window.innerHeight;
+  const distance = target - start;
+  const duration = 800; // ギューンと感を出すため少し長めに
+  let startTime = null;
+
+  function animation(currentTime) {
+    if (startTime === null) startTime = currentTime;
+    const timeElapsed = currentTime - startTime;
+    const progress = Math.min(timeElapsed / duration, 1);
+    
+    // イージング関数（ease-out-quart）加速して減速
+    const ease = 1 - Math.pow(1 - progress, 4);
+    
+    window.scrollTo(0, start + distance * ease);
+    
+    if (progress < 1) {
+      requestAnimationFrame(animation);
+    }
+  }
+  
+  requestAnimationFrame(animation);
+});
+
+scrollUpBtn.addEventListener('click', () => {
+  const start = window.scrollY;
+  const target = 0;
+  const distance = target - start;
+  const duration = 800;
+  let startTime = null;
+
+  function animation(currentTime) {
+    if (startTime === null) startTime = currentTime;
+    const timeElapsed = currentTime - startTime;
+    const progress = Math.min(timeElapsed / duration, 1);
+    
+    // イージング関数（ease-out-quart）
+    const ease = 1 - Math.pow(1 - progress, 4);
+    
+    window.scrollTo(0, start + distance * ease);
+    
+    if (progress < 1) {
+      requestAnimationFrame(animation);
+    }
+  }
+  
+  requestAnimationFrame(animation);
+});
+
+// スクロール位置に応じてボタンとエフェクトを切り替え
+window.addEventListener('scroll', () => {
+  const scrollPosition = window.scrollY;
+  const viewportHeight = window.innerHeight;
+  
+  if (scrollPosition > viewportHeight / 2) {
+    // 下の画面
+    scrollDownBtn.classList.add('hidden');
+    scrollUpBtn.classList.remove('hidden');
+    
+    // 周回ドット非表示
+    if (edgeDot) {
+      edgeDot.style.opacity = '0';
+      edgeDot.classList.remove('active');
+    }
+    
+    // 風エフェクト非表示
+    if (windLines) {
+      windLines.style.opacity = '0';
+    }
+  } else {
+    // 上の画面
+    scrollDownBtn.classList.remove('hidden');
+    scrollUpBtn.classList.add('hidden');
+    
+    // 周回ドット表示
+    if (edgeDot) {
+      edgeDot.classList.add('active');
+      edgeDot.style.opacity = '1';
+    }
+    
+    // 風エフェクト表示
+    if (windLines) {
+      windLines.style.opacity = '1';
+    }
+  }
+});
 </script>
 
 </body>
