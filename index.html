@@ -23,16 +23,12 @@ body {
   color: var(--text);
   overflow: hidden;
   font-family: -apple-system, BlinkMacSystemFont, sans-serif;
-  position: fixed;
-  width: 100%;
-  height: 100vh;
   touch-action: none;
 }
 
 body.allow-scroll {
   overflow-y: auto;
-  position: static;
-  height: auto;
+  overflow-x: hidden;
   touch-action: pan-y;
 }
 
@@ -627,10 +623,22 @@ setInterval(updateTime, 1000);
 
 // タッチイベントでスクロール防止(iOS対策)
 let preventScroll = true;
+let touchStartY = 0;
+
+document.body.addEventListener('touchstart', (e) => {
+  touchStartY = e.touches[0].clientY;
+}, { passive: true });
 
 document.body.addEventListener('touchmove', (e) => {
   if (preventScroll) {
-    e.preventDefault();
+    // スクロールボタン以外のタッチ移動を防止
+    const touchY = e.touches[0].clientY;
+    const touchDiff = Math.abs(touchY - touchStartY);
+    
+    // わずかな移動は許可(ボタンタップのため)
+    if (touchDiff > 10) {
+      e.preventDefault();
+    }
   }
 }, { passive: false });
 
