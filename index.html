@@ -793,7 +793,7 @@ function updateWeeklyForecast(data) {
     item.innerHTML = `
       <div class="forecast-date">${wrapNumbers(`${month}/${day}（${dayOfWeek}）`)}</div>
       <div class="forecast-icon">${weatherIcon}</div>
-      <div class="forecast-temp">${wrapNumbers(`${toFullWidth(String(min))}℃`)}</div>
+      <div class="forecast-temp">${wrapNumbers(`${toFullWidth(String(max))}/${toFullWidth(String(min))}℃`)}</div>
       <div class="forecast-rain">☂️${wrapNumbers(`${toFullWidth(String(rainProb))}%`)}</div>
     `;
     
