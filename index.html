@@ -625,7 +625,7 @@ function checkScrollButtonVisibility() {
     // 小さい画面ではボタン非表示で手動スクロール可能
     document.body.classList.add('allow-scroll');
   } else {
-    // ボタン表示で手動スクロール不可
+    // ボタン表示で手動スクロール不可(スマホ含む)
     document.body.classList.remove('allow-scroll');
   }
 }
@@ -700,22 +700,19 @@ async function fetchWeather() {
   currentWindSpeed = data.current.wind_speed_10m / 3.6;
 
   let icon = "☀️";
-  let bgColor = "rgb(51,123,204)"; // デフォルトはブルー
+  let bgColor = "rgb(255,140,60)"; // デフォルトはオレンジ(晴れ)
   
   if (code >= 1 && code <= 3) {
     icon = "⛅";
-    bgColor = "rgb(51,123,204)"; // 曇り系はブルー
+    bgColor = "rgb(120,120,120)"; // 曇り系はグレー
   } else if (code >= 45) {
     icon = "☁️";
-    bgColor = "rgb(51,123,204)"; // 曇りはブルー
-  } else {
-    // 晴れ
-    bgColor = "rgb(255,140,60)"; // オレンジ
+    bgColor = "rgb(120,120,120)"; // 曇りはグレー
   }
   
   if (rainVal >= 35) {
     icon = "🌧️";
-    bgColor = "rgb(120,120,120)"; // グレー
+    bgColor = "rgb(51,123,204)"; // 青
   }
 
   weatherIcon.textContent = icon;
@@ -857,10 +854,16 @@ const edgeDot = document.getElementById('edgeDot');
 
 // スクロール中は手動スクロール無効
 let isScrolling = false;
+let currentScreen = 'top'; // 'top' or 'bottom'
 
 scrollDownBtn.addEventListener('click', () => {
-  if (isScrolling) return;
+  if (isScrolling || currentScreen === 'bottom') return;
   isScrolling = true;
+  currentScreen = 'bottom';
+  
+  // ボタン表示を即座に切り替え
+  scrollDownBtn.classList.add('hidden');
+  scrollUpBtn.classList.remove('hidden');
   
   const start = window.scrollY;
   const target = window.innerHeight;
@@ -881,6 +884,14 @@ scrollDownBtn.addEventListener('click', () => {
       requestAnimationFrame(animation);
     } else {
       isScrolling = false;
+      // エフェクトを切り替え
+      if (edgeDot) {
+        edgeDot.style.opacity = '0';
+        edgeDot.classList.remove('active');
+      }
+      if (windLines) {
+        windLines.style.opacity = '0';
+      }
     }
   }
   
@@ -888,8 +899,13 @@ scrollDownBtn.addEventListener('click', () => {
 });
 
 scrollUpBtn.addEventListener('click', () => {
-  if (isScrolling) return;
+  if (isScrolling || currentScreen === 'top') return;
   isScrolling = true;
+  currentScreen = 'top';
+  
+  // ボタン表示を即座に切り替え
+  scrollDownBtn.classList.remove('hidden');
+  scrollUpBtn.classList.add('hidden');
   
   const start = window.scrollY;
   const target = 0;
@@ -910,46 +926,57 @@ scrollUpBtn.addEventListener('click', () => {
       requestAnimationFrame(animation);
     } else {
       isScrolling = false;
+      // エフェクトを切り替え
+      if (edgeDot) {
+        edgeDot.classList.add('active');
+        edgeDot.style.opacity = '1';
+      }
+      if (windLines) {
+        windLines.style.opacity = '1';
+      }
     }
   }
   
   requestAnimationFrame(animation);
 });
 
-// スクロール位置に応じてボタンとエフェクトを切り替え
+// スクロール位置に応じてエフェクトを切り替え(ボタンは手動で制御)
 window.addEventListener('scroll', () => {
+  // スクロール中は何もしない
+  if (isScrolling) return;
+  
   const scrollPosition = window.scrollY;
   const viewportHeight = window.innerHeight;
   
   if (scrollPosition > viewportHeight / 2) {
     // 下の画面
-    scrollDownBtn.classList.add('hidden');
-    scrollUpBtn.classList.remove('hidden');
-    
-    // 周回ドット非表示
-    if (edgeDot) {
-      edgeDot.style.opacity = '0';
-      edgeDot.classList.remove('active');
-    }
-    
-    // 風エフェクト非表示
-    if (windLines) {
-      windLines.style.opacity = '0';
+    if (currentScreen !== 'bottom') {
+      currentScreen = 'bottom';
+      scrollDownBtn.classList.add('hidden');
+      scrollUpBtn.classList.remove('hidden');
+      
+      if (edgeDot) {
+        edgeDot.style.opacity = '0';
+        edgeDot.classList.remove('active');
+      }
+      if (windLines) {
+        windLines.style.opacity = '0';
+      }
     }
   } else {
     // 上の画面
-    scrollDownBtn.classList.remove('hidden');
-    scrollUpBtn.classList.add('hidden');
-    
-    // 周回ドット表示
-    if (edgeDot) {
-      edgeDot.classList.add('active');
-      edgeDot.style.opacity = '1';
-    }
-    
-    // 風エフェクト表示
-    if (windLines) {
-      windLines.style.opacity = '1';
+    if (currentScreen !== 'top') {
+      currentScreen = 'top';
+      scrollDownBtn.classList.remove('hidden');
+      scrollUpBtn.classList.add('hidden');
+      
+      if (edgeDot) {
+        edgeDot.classList.add('active');
+        edgeDot.style.opacity = '1';
+      }
+      if (windLines) {
+        windLines.style.opacity = '1';
+      }
     }
   }
 });
