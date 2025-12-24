@@ -712,7 +712,7 @@ async function fetchWeather() {
     "&current=temperature_2m,wind_speed_10m" +
     "&daily=temperature_2m_max,temperature_2m_min,precipitation_probability_max,weather_code" +
     "&timezone=Asia%2FTokyo" +
-    "&forecast_days=7";
+    "&forecast_days=8"; // 8日分取得(今日+7日)
 
   const res = await fetch(url);
   const data = await res.json();
@@ -765,14 +765,15 @@ async function fetchWeather() {
   updateWindEffect();
 }
 
-// 週間予報を表示
+// 週間予報を表示(明日から7日分)
 function updateWeeklyForecast(data) {
   const weeklyContainer = document.getElementById('weeklyForecast');
   weeklyContainer.innerHTML = '';
   
   const dayNames = ["日","月","火","水","木","金","土"];
   
-  for (let i = 0; i < 7; i++) {
+  // i=1から開始(今日を除く)
+  for (let i = 1; i <= 7; i++) {
     const date = new Date(data.daily.time[i]);
     const month = toFullWidth(String(date.getMonth() + 1));
     const day = toFullWidth(String(date.getDate()));
