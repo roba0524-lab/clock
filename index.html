@@ -2,7 +2,7 @@
 <html lang="ja">
 <head>
 <meta charset="UTF-8" />
-<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0, minimum-scale=1.0, maximum-scale=5.0" />
 <title>Weather Clock</title>
 
 <link rel="preconnect" href="https://fonts.googleapis.com">
@@ -24,12 +24,50 @@ body {
   overflow: hidden;
   font-family: -apple-system, BlinkMacSystemFont, sans-serif;
   touch-action: none;
+  perspective: 1000px;
+  min-width: 120px;
 }
 
 body.allow-scroll {
   overflow-y: auto;
   overflow-x: hidden;
   touch-action: pan-y;
+}
+
+/* ===== 画面切り替え ===== */
+.app-container {
+  position: relative;
+  width: 100%;
+  height: 100vh;
+  transform-style: preserve-3d;
+  transition: transform 0.8s cubic-bezier(0.68, -0.55, 0.27, 1.55);
+}
+
+.app-container.show-news {
+  transform: rotateY(180deg);
+}
+
+.weather-screen,
+.news-screen {
+  position: absolute;
+  width: 100%;
+  height: 100%;
+  backface-visibility: hidden;
+  -webkit-backface-visibility: hidden;
+}
+
+.news-screen {
+  transform: rotateY(180deg);
+  overflow-y: auto;
+  overflow-x: hidden;
+  cursor: pointer;
+  height: 100vh;
+  scrollbar-width: none;
+  -ms-overflow-style: none;
+}
+
+.news-screen::-webkit-scrollbar {
+  display: none;
 }
 
 /* ===== 風エフェクト ===== */
@@ -353,7 +391,6 @@ body.allow-scroll {
   transition: opacity 0.3s;
 }
 
-/* リフレッシュ後にフェードイン&点滅開始 */
 .edge-dot.active {
   animation: fade 1s infinite;
 }
@@ -363,7 +400,6 @@ body.allow-scroll {
   to { opacity: 1; }
 }
 
-/* PC・横向き表示時はドットを非表示 */
 @media (min-width: 768px), (orientation: landscape) and (max-width: 767px) {
   .edge-dot {
     display: none;
@@ -464,6 +500,65 @@ body.allow-scroll {
   }
 }
 
+/* ===== ニュース画面 ===== */
+.news-container {
+  padding: 5vh 5vw;
+  max-width: 800px;
+  margin: 0 auto;
+  font-family: "Zen Kaku Gothic New", sans-serif;
+}
+
+.news-title {
+  font-size: 6vw;
+  font-weight: 700;
+  margin-bottom: 3vh;
+  text-align: center;
+  display: none;
+}
+
+.news-item {
+  background: rgba(255, 255, 255, 0.1);
+  padding: 3vh 3vw;
+  margin-bottom: 2vh;
+  border-radius: 2vw;
+  transition: background 0.3s;
+}
+
+.news-item:hover {
+  background: rgba(255, 255, 255, 0.15);
+}
+
+.news-item-title {
+  font-size: 4.5vw;
+  font-weight: 600;
+  margin-bottom: 1vh;
+  line-height: 1.4;
+}
+
+@media (min-width: 768px) {
+  .news-item-title {
+    font-size: 2vw;
+  }
+}
+
+.news-item-description {
+  font-size: 3.5vw;
+  line-height: 1.6;
+  opacity: 0.9;
+  display: none;
+}
+
+.news-item-link {
+  color: #ffffff;
+  text-decoration: none;
+}
+
+.news-loading {
+  text-align: center;
+  font-size: 5vw;
+  padding: 5vh;
+}
+
 /* ===== スクロールボタン ===== */
 .scroll-button {
   position: fixed;
@@ -491,88 +586,140 @@ body.allow-scroll {
   }
 }
 
+/* ===== 画面切り替えヒント ===== */
+.tap-hint {
+  position: fixed;
+  top: 2vh;
+  left: 50%;
+  transform: translateX(-50%);
+  font-size: 3vw;
+  opacity: 0.5;
+  z-index: 200;
+  pointer-events: none;
+  font-family: "Zen Kaku Gothic New", sans-serif;
+  display: none;
+}
 </style>
 </head>
 
 <body>
 
-<div class="wind-lines">
-  <div class="wind-line">
-    <svg viewBox="0 0 200 100" preserveAspectRatio="none">
-      <defs>
-        <linearGradient id="waveGrad" x1="0%" y1="0%" x2="100%" y2="0%">
-          <stop offset="0%" style="stop-color:white;stop-opacity:0" />
-          <stop offset="15%" style="stop-color:white;stop-opacity:0.3" />
-          <stop offset="25%" style="stop-color:white;stop-opacity:0.6" />
-          <stop offset="35%" style="stop-color:white;stop-opacity:0.3" />
-          <stop offset="50%" style="stop-color:white;stop-opacity:0" />
-          <stop offset="65%" style="stop-color:white;stop-opacity:0.3" />
-          <stop offset="75%" style="stop-color:white;stop-opacity:0.6" />
-          <stop offset="85%" style="stop-color:white;stop-opacity:0.3" />
-          <stop offset="100%" style="stop-color:white;stop-opacity:0" />
-        </linearGradient>
-      </defs>
-      <path d="M0,50 Q25,10 50,50 T100,50 T150,50 T200,50" 
-            fill="none" 
-            stroke="url(#waveGrad)" 
-            stroke-width="40" 
-            stroke-linecap="round"/>
-      <path d="M0,55 Q25,15 50,55 T100,55 T150,55 T200,55" 
-            fill="none" 
-            stroke="url(#waveGrad)" 
-            stroke-width="20" 
-            stroke-linecap="round"
-            opacity="0.5"/>
-    </svg>
+<div class="tap-hint" id="tapHint">タップでニュース表示</div>
+
+<div class="app-container" id="appContainer">
+  <!-- 天気画面 -->
+  <div class="weather-screen">
+    <div class="wind-lines">
+      <div class="wind-line">
+        <svg viewBox="0 0 200 100" preserveAspectRatio="none">
+          <defs>
+            <linearGradient id="waveGrad" x1="0%" y1="0%" x2="100%" y2="0%">
+              <stop offset="0%" style="stop-color:white;stop-opacity:0" />
+              <stop offset="15%" style="stop-color:white;stop-opacity:0.3" />
+              <stop offset="25%" style="stop-color:white;stop-opacity:0.6" />
+              <stop offset="35%" style="stop-color:white;stop-opacity:0.3" />
+              <stop offset="50%" style="stop-color:white;stop-opacity:0" />
+              <stop offset="65%" style="stop-color:white;stop-opacity:0.3" />
+              <stop offset="75%" style="stop-color:white;stop-opacity:0.6" />
+              <stop offset="85%" style="stop-color:white;stop-opacity:0.3" />
+              <stop offset="100%" style="stop-color:white;stop-opacity:0" />
+            </linearGradient>
+          </defs>
+          <path d="M0,50 Q25,10 50,50 T100,50 T150,50 T200,50" 
+                fill="none" 
+                stroke="url(#waveGrad)" 
+                stroke-width="40" 
+                stroke-linecap="round"/>
+          <path d="M0,55 Q25,15 50,55 T100,55 T150,55 T200,55" 
+                fill="none" 
+                stroke="url(#waveGrad)" 
+                stroke-width="20" 
+                stroke-linecap="round"
+                opacity="0.5"/>
+        </svg>
+      </div>
+    </div>
+
+    <div class="container">
+      <div class="time-wrapper">
+        <div class="time-box hour">
+          <div class="digit" id="hourTen">-</div>
+          <div class="digit" id="hourOne">-</div>
+        </div>
+        <div class="colon"></div>
+        <div class="time-box minute">
+          <div class="digit" id="minTen">-</div>
+          <div class="digit" id="minOne">-</div>
+        </div>
+      </div>
+
+      <div id="date" class="date">--</div>
+
+      <div class="weather">
+        <div id="weatherIcon" class="weather-icon">--</div>
+        <div id="temp" class="temp">--℃ / --℃（--℃）</div>
+        <div id="rain" class="rain">
+          <div class="rain-display">☂️ --%</div>
+          <div class="wind-display">🌬️ --m/s</div>
+        </div>
+      </div>
+    </div>
+
+    <div class="weekly-forecast" id="weeklyForecast"></div>
+
+    <div id="edgeDot" class="edge-dot"></div>
+
+    <div class="scroll-button" id="scrollDownBtn">▼</div>
+    <div class="scroll-button hidden" id="scrollUpBtn">▲</div>
+  </div>
+
+  <!-- ニュース画面 -->
+  <div class="news-screen">
+    <div class="news-container" id="newsContainer">
+      <div class="news-loading">ニュースを読み込み中...</div>
+    </div>
   </div>
 </div>
-
-<div class="container">
-  <div class="time-wrapper">
-    <div class="time-box hour">
-      <div class="digit" id="hourTen">-</div>
-      <div class="digit" id="hourOne">-</div>
-    </div>
-    <div class="colon"></div>
-    <div class="time-box minute">
-      <div class="digit" id="minTen">-</div>
-      <div class="digit" id="minOne">-</div>
-    </div>
-  </div>
-
-  <div id="date" class="date">--</div>
-
-  <div class="weather">
-    <div id="weatherIcon" class="weather-icon">--</div>
-    <div id="temp" class="temp">--℃ / --℃（--℃）</div>
-    <div id="rain" class="rain">
-      <div class="rain-display">☂️ --%</div>
-      <div class="wind-display">🌬️ --m/s</div>
-    </div>
-  </div>
-</div>
-
-<div class="weekly-forecast" id="weeklyForecast">
-  <!-- 7日分の予報がここに挿入されます -->
-</div>
-
-<div id="edgeDot" class="edge-dot"></div>
-
-<div class="scroll-button" id="scrollDownBtn">▼</div>
-<div class="scroll-button hidden" id="scrollUpBtn">▲</div>
 
 <script>
+/* ===== 画面切り替え ===== */
+let currentView = 'weather';
+const appContainer = document.getElementById('appContainer');
+const tapHint = document.getElementById('tapHint');
+
+// 天気画面全体でクリック/タップで切り替え
+document.addEventListener('click', (e) => {
+  // スクロールボタンのクリックは除外
+  if (e.target.closest('.scroll-button')) return;
+  
+  // ニュース画面のリンククリックは除外
+  if (e.target.closest('a')) return;
+  
+  if (currentView === 'weather') {
+    // 天気画面をクリック
+    currentView = 'news';
+    appContainer.classList.add('show-news');
+    tapHint.textContent = 'タップで天気表示';
+    if (!newsLoaded) {
+      fetchNews();
+    }
+  } else {
+    // ニュース画面をクリック
+    currentView = 'weather';
+    appContainer.classList.remove('show-news');
+    tapHint.textContent = 'タップでニュース表示';
+  }
+});
+
 /* ===== 時刻 ===== */
 let lastMinute = null;
 let lastSecond = null;
 let isInitialLoad = true;
 
-// 半角→全角変換関数
 function toFullWidth(str) {
   return str.replace(/[0-9]/g, (s) => String.fromCharCode(s.charCodeAt(0) + 0xFEE0));
 }
 
-// 数字部分だけspanで囲む関数
 function wrapNumbers(str) {
   return str.replace(/[０-９]+/g, (match) => `<span class="num-tight">${match}</span>`);
 }
@@ -600,7 +747,6 @@ function updateTime() {
     isInitialLoad = false;
   }
 
-  // 毎分0秒で天気情報スライド
   if (s === 0 && s !== lastSecond) {
     const weatherEl = document.querySelector(".weather");
     weatherEl.classList.remove("weather-slide");
@@ -614,14 +760,11 @@ function updateTime() {
   const day = toFullWidth(String(now.getDate()));
   const dateStr = `${month}月${day}日（${w[now.getDay()]}）`;
   date.innerHTML = wrapNumbers(dateStr);
-
-  // 時刻による背景色変更は天気APIの取得後に処理
 }
 
 updateTime();
 setInterval(updateTime, 1000);
 
-// タッチイベントでスクロール防止(iOS対策)
 let preventScroll = true;
 let touchStartY = 0;
 
@@ -630,26 +773,20 @@ document.body.addEventListener('touchstart', (e) => {
 }, { passive: true });
 
 document.body.addEventListener('touchmove', (e) => {
-  if (preventScroll) {
-    // スクロールボタン以外のタッチ移動を防止
+  if (preventScroll && currentView === 'weather') {
     const touchY = e.touches[0].clientY;
     const touchDiff = Math.abs(touchY - touchStartY);
-    
-    // わずかな移動は許可(ボタンタップのため)
     if (touchDiff > 10) {
       e.preventDefault();
     }
   }
 }, { passive: false });
 
-// スクロールボタンの表示状態をチェック
 function checkScrollButtonVisibility() {
   if (window.innerHeight <= 600 && window.innerWidth <= 600) {
-    // 小さい画面ではボタン非表示で手動スクロール可能
     document.body.classList.add('allow-scroll');
     preventScroll = false;
   } else {
-    // ボタン表示で手動スクロール不可(スマホ含む)
     document.body.classList.remove('allow-scroll');
     preventScroll = true;
   }
@@ -658,30 +795,25 @@ function checkScrollButtonVisibility() {
 checkScrollButtonVisibility();
 window.addEventListener('resize', checkScrollButtonVisibility);
 
-// 0.8秒後にドットの点滅を開始
 setTimeout(() => {
   if (dot && dot.classList) {
     dot.classList.add('active');
   }
 }, 800);
 
-/* ===== 外周ドット（上中央スタート） ===== */
 const dot = document.getElementById("edgeDot");
 
 function updateEdgeDot() {
   const now = new Date();
   const sec = now.getSeconds() + now.getMilliseconds() / 1000;
-
   const w = window.innerWidth;
   const h = window.innerHeight;
   const perimeter = 2 * (w + h);
-
   const offset = w / 2;
   let d = (sec / 60) * perimeter + offset;
   d %= perimeter;
 
   let x, y;
-
   if (d < w) {
     x = d;
     y = 0;
@@ -712,7 +844,7 @@ async function fetchWeather() {
     "&current=temperature_2m,wind_speed_10m" +
     "&daily=temperature_2m_max,temperature_2m_min,precipitation_probability_max,weather_code" +
     "&timezone=Asia%2FTokyo" +
-    "&forecast_days=8"; // 8日分取得(今日+7日)
+    "&forecast_days=8";
 
   const res = await fetch(url);
   const data = await res.json();
@@ -725,19 +857,19 @@ async function fetchWeather() {
   currentWindSpeed = data.current.wind_speed_10m / 3.6;
 
   let icon = "☀️";
-  let bgColor = "rgb(255,140,60)"; // デフォルトはオレンジ(晴れ)
+  let bgColor = "rgb(255,140,60)";
   
   if (code >= 1 && code <= 3) {
     icon = "⛅";
-    bgColor = "rgb(120,120,120)"; // 曇り系はグレー
+    bgColor = "rgb(120,120,120)";
   } else if (code >= 45) {
     icon = "☁️";
-    bgColor = "rgb(120,120,120)"; // 曇りはグレー
+    bgColor = "rgb(120,120,120)";
   }
   
   if (rainVal >= 35) {
     icon = "🌧️";
-    bgColor = "rgb(51,123,204)"; // 青
+    bgColor = "rgb(51,123,204)";
   }
 
   weatherIcon.textContent = icon;
@@ -751,7 +883,6 @@ async function fetchWeather() {
   const windStr = `🌬️ ${toFullWidth(String(Math.round(currentWindSpeed)))}m/s`;
   document.querySelector('.wind-display').innerHTML = `<span style="white-space: nowrap;">${wrapNumbers(windStr)}</span>`;
   
-  // 背景色を設定(夜は常にダークブルー)
   const now = new Date();
   if (now.getHours() >= 18 || now.getHours() < 5) {
     document.documentElement.style.setProperty("--bg", "#0b1d3a");
@@ -759,20 +890,16 @@ async function fetchWeather() {
     document.documentElement.style.setProperty("--bg", bgColor);
   }
   
-  // 週間予報を更新
   updateWeeklyForecast(data);
-  
   updateWindEffect();
 }
 
-// 週間予報を表示(明日から7日分)
 function updateWeeklyForecast(data) {
   const weeklyContainer = document.getElementById('weeklyForecast');
   weeklyContainer.innerHTML = '';
   
   const dayNames = ["日","月","火","水","木","金","土"];
   
-  // i=1から開始(今日を除く)
   for (let i = 1; i <= 7; i++) {
     const date = new Date(data.daily.time[i]);
     const month = toFullWidth(String(date.getMonth() + 1));
@@ -802,7 +929,6 @@ function updateWeeklyForecast(data) {
   }
 }
 
-// 風エフェクト更新
 function updateWindEffect() {
   const windLine = document.querySelector('.wind-line');
   const root = document.documentElement;
@@ -817,44 +943,41 @@ function updateWindEffect() {
   let duration, interval;
   
   if (currentWindSpeed <= 1.6) {
-    duration = 8; // 遅い
-    interval = 15000; // 15秒に1回
+    duration = 8;
+    interval = 15000;
   } else if (currentWindSpeed <= 3.4) {
-    duration = 6; // やや速い
-    interval = 15000; // 15秒に1回
+    duration = 6;
+    interval = 15000;
   } else if (currentWindSpeed <= 5.5) {
-    duration = 4; // やや速い
-    interval = 7500; // 15秒に2回
+    duration = 4;
+    interval = 7500;
   } else if (currentWindSpeed <= 8.0) {
-    duration = 2; // 速い
-    interval = 5000; // 15秒に3回
+    duration = 2;
+    interval = 5000;
   } else if (currentWindSpeed <= 10.8) {
-    duration = 1; // 速い
-    interval = 3750; // 15秒に4回
+    duration = 1;
+    interval = 3750;
   } else {
-    duration = 0.8; // 超速い
-    interval = 3000; // 15秒に5回
+    duration = 0.8;
+    interval = 3000;
   }
   
   root.style.setProperty('--wind-duration', `${duration}s`);
   
-  // 既存のインターバルをクリア
   if (window.windInterval) {
     clearInterval(window.windInterval);
   }
   
-  // 風のアニメーションを定期的にトリガー
   function triggerWind() {
     windLine.style.animation = 'none';
     void windLine.offsetWidth;
     windLine.style.animation = `windMove ${duration}s linear`;
   }
   
-  triggerWind(); // 初回実行
+  triggerWind();
   window.windInterval = setInterval(triggerWind, interval);
 }
 
-// 15秒に1回、5秒間風速表示
 function toggleWindDisplay() {
   const rainDisplay = document.querySelector('.rain-display');
   const windDisplay = document.querySelector('.wind-display');
@@ -872,22 +995,78 @@ fetchWeather();
 setInterval(fetchWeather, 30 * 60 * 1000);
 setInterval(toggleWindDisplay, 15000);
 
+/* ===== ニュース取得 ===== */
+let newsLoaded = false;
+
+async function fetchNews() {
+  const newsContainer = document.getElementById('newsContainer');
+  newsContainer.innerHTML = '<div class="news-loading">ニュースを読み込み中...</div>';
+  
+  try {
+    // NHKニュースRSSをCORSプロキシ経由で取得
+    const rssUrl = 'https://www3.nhk.or.jp/rss/news/cat0.xml';
+    const proxyUrl = 'https://api.allorigins.win/get?url=';
+    
+    const response = await fetch(proxyUrl + encodeURIComponent(rssUrl));
+    const data = await response.json();
+    const text = data.contents;
+    
+    const parser = new DOMParser();
+    const xml = parser.parseFromString(text, 'text/xml');
+    const items = xml.querySelectorAll('item');
+    
+    if (items.length === 0) {
+      throw new Error('ニュース項目が見つかりません');
+    }
+    
+    newsContainer.innerHTML = '';
+    
+    // 5-10個のニュース見出しのみ表示
+    const newsCount = Math.min(10, items.length);
+    
+    for (let i = 0; i < newsCount; i++) {
+      const item = items[i];
+      const title = item.querySelector('title')?.textContent || '';
+      const link = item.querySelector('link')?.textContent || '';
+      
+      const newsItem = document.createElement('div');
+      newsItem.className = 'news-item';
+      newsItem.innerHTML = `
+        <a href="${link}" target="_blank" class="news-item-link">
+          <div class="news-item-title">${title}</div>
+        </a>
+      `;
+      newsContainer.appendChild(newsItem);
+    }
+    
+    // 最後にスペーサーを追加
+    const spacer = document.createElement('div');
+    spacer.style.height = '30vh';
+    newsContainer.appendChild(spacer);
+    
+    newsLoaded = true;
+  } catch (error) {
+    console.error('ニュース取得エラー:', error);
+    newsContainer.innerHTML = `
+      <div class="news-loading">ニュースの取得に失敗しました<br>${error.message}</div>
+    `;
+  }
+}
+
 /* ===== スクロール制御 ===== */
 const scrollDownBtn = document.getElementById('scrollDownBtn');
 const scrollUpBtn = document.getElementById('scrollUpBtn');
 const windLines = document.querySelector('.wind-lines');
 const edgeDot = document.getElementById('edgeDot');
 
-// スクロール中は手動スクロール無効
 let isScrolling = false;
-let currentScreen = 'top'; // 'top' or 'bottom'
+let currentScreen = 'top';
 
 scrollDownBtn.addEventListener('click', () => {
   if (isScrolling || currentScreen === 'bottom') return;
   isScrolling = true;
   currentScreen = 'bottom';
   
-  // ボタン表示を即座に切り替え
   scrollDownBtn.classList.add('hidden');
   scrollUpBtn.classList.remove('hidden');
   
@@ -901,16 +1080,13 @@ scrollDownBtn.addEventListener('click', () => {
     if (startTime === null) startTime = currentTime;
     const timeElapsed = currentTime - startTime;
     const progress = Math.min(timeElapsed / duration, 1);
-    
     const ease = 1 - Math.pow(1 - progress, 4);
-    
     window.scrollTo(0, start + distance * ease);
     
     if (progress < 1) {
       requestAnimationFrame(animation);
     } else {
       isScrolling = false;
-      // エフェクトを切り替え
       if (edgeDot) {
         edgeDot.style.opacity = '0';
         edgeDot.classList.remove('active');
@@ -929,7 +1105,6 @@ scrollUpBtn.addEventListener('click', () => {
   isScrolling = true;
   currentScreen = 'top';
   
-  // ボタン表示を即座に切り替え
   scrollDownBtn.classList.remove('hidden');
   scrollUpBtn.classList.add('hidden');
   
@@ -943,16 +1118,13 @@ scrollUpBtn.addEventListener('click', () => {
     if (startTime === null) startTime = currentTime;
     const timeElapsed = currentTime - startTime;
     const progress = Math.min(timeElapsed / duration, 1);
-    
     const ease = 1 - Math.pow(1 - progress, 4);
-    
     window.scrollTo(0, start + distance * ease);
     
     if (progress < 1) {
       requestAnimationFrame(animation);
     } else {
       isScrolling = false;
-      // エフェクトを切り替え
       if (edgeDot) {
         edgeDot.classList.add('active');
         edgeDot.style.opacity = '1';
@@ -966,16 +1138,13 @@ scrollUpBtn.addEventListener('click', () => {
   requestAnimationFrame(animation);
 });
 
-// スクロール位置に応じてエフェクトを切り替え(ボタンは手動で制御)
 window.addEventListener('scroll', () => {
-  // スクロール中は何もしない
   if (isScrolling) return;
   
   const scrollPosition = window.scrollY;
   const viewportHeight = window.innerHeight;
   
   if (scrollPosition > viewportHeight / 2) {
-    // 下の画面
     if (currentScreen !== 'bottom') {
       currentScreen = 'bottom';
       scrollDownBtn.classList.add('hidden');
@@ -990,7 +1159,6 @@ window.addEventListener('scroll', () => {
       }
     }
   } else {
-    // 上の画面
     if (currentScreen !== 'top') {
       currentScreen = 'top';
       scrollDownBtn.classList.remove('hidden');
