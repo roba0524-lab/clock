@@ -21,53 +21,11 @@ body {
   margin: 0;
   background: var(--bg);
   color: var(--text);
-  overflow: hidden;
+  overflow-y: auto;
+  overflow-x: hidden;
   font-family: -apple-system, BlinkMacSystemFont, sans-serif;
-  touch-action: none;
-  perspective: 1000px;
-  min-width: 120px;
-}
-
-body.allow-scroll {
-  overflow-y: auto;
-  overflow-x: hidden;
   touch-action: pan-y;
-}
-
-/* ===== 画面切り替え ===== */
-.app-container {
-  position: relative;
-  width: 100%;
-  height: 100vh;
-  transform-style: preserve-3d;
-  transition: transform 0.8s cubic-bezier(0.68, -0.55, 0.27, 1.55);
-}
-
-.app-container.show-news {
-  transform: rotateY(180deg);
-}
-
-.weather-screen,
-.news-screen {
-  position: absolute;
-  width: 100%;
-  height: 100%;
-  backface-visibility: hidden;
-  -webkit-backface-visibility: hidden;
-}
-
-.news-screen {
-  transform: rotateY(180deg);
-  overflow-y: auto;
-  overflow-x: hidden;
-  cursor: pointer;
-  height: 100vh;
-  scrollbar-width: none;
-  -ms-overflow-style: none;
-}
-
-.news-screen::-webkit-scrollbar {
-  display: none;
+  min-width: 120px;
 }
 
 /* ===== 風エフェクト ===== */
@@ -395,11 +353,6 @@ body.allow-scroll {
   animation: fade 1s infinite;
 }
 
-@keyframes fadeInDot {
-  from { opacity: 0; }
-  to { opacity: 1; }
-}
-
 @media (min-width: 768px), (orientation: landscape) and (max-width: 767px) {
   .edge-dot {
     display: none;
@@ -500,65 +453,6 @@ body.allow-scroll {
   }
 }
 
-/* ===== ニュース画面 ===== */
-.news-container {
-  padding: 5vh 5vw;
-  max-width: 800px;
-  margin: 0 auto;
-  font-family: "Zen Kaku Gothic New", sans-serif;
-}
-
-.news-title {
-  font-size: 6vw;
-  font-weight: 700;
-  margin-bottom: 3vh;
-  text-align: center;
-  display: none;
-}
-
-.news-item {
-  background: rgba(255, 255, 255, 0.1);
-  padding: 3vh 3vw;
-  margin-bottom: 2vh;
-  border-radius: 2vw;
-  transition: background 0.3s;
-}
-
-.news-item:hover {
-  background: rgba(255, 255, 255, 0.15);
-}
-
-.news-item-title {
-  font-size: 4.5vw;
-  font-weight: 600;
-  margin-bottom: 1vh;
-  line-height: 1.4;
-}
-
-@media (min-width: 768px) {
-  .news-item-title {
-    font-size: 2vw;
-  }
-}
-
-.news-item-description {
-  font-size: 3.5vw;
-  line-height: 1.6;
-  opacity: 0.9;
-  display: none;
-}
-
-.news-item-link {
-  color: #ffffff;
-  text-decoration: none;
-}
-
-.news-loading {
-  text-align: center;
-  font-size: 5vw;
-  padding: 5vh;
-}
-
 /* ===== スクロールボタン ===== */
 .scroll-button {
   position: fixed;
@@ -567,9 +461,11 @@ body.allow-scroll {
   font-size: 10vw;
   color: rgba(255, 255, 255, 0.4);
   cursor: pointer;
-  z-index: 100;
+  z-index: 9999;
   transition: color 0.3s;
   user-select: none;
+  display: block;
+  pointer-events: auto;
 }
 
 .scroll-button:hover {
@@ -577,140 +473,79 @@ body.allow-scroll {
 }
 
 .scroll-button.hidden {
-  display: none;
+  display: none !important;
 }
 
-@media (max-height: 600px) and (max-width: 600px) {
-  .scroll-button {
-    display: none !important;
-  }
-}
 
-/* ===== 画面切り替えヒント ===== */
-.tap-hint {
-  position: fixed;
-  top: 2vh;
-  left: 50%;
-  transform: translateX(-50%);
-  font-size: 3vw;
-  opacity: 0.5;
-  z-index: 200;
-  pointer-events: none;
-  font-family: "Zen Kaku Gothic New", sans-serif;
-  display: none;
-}
 </style>
 </head>
 
 <body>
 
-<div class="tap-hint" id="tapHint">タップでニュース表示</div>
+<div class="wind-lines">
+  <div class="wind-line">
+    <svg viewBox="0 0 200 100" preserveAspectRatio="none">
+      <defs>
+        <linearGradient id="waveGrad" x1="0%" y1="0%" x2="100%" y2="0%">
+          <stop offset="0%" style="stop-color:white;stop-opacity:0" />
+          <stop offset="15%" style="stop-color:white;stop-opacity:0.3" />
+          <stop offset="25%" style="stop-color:white;stop-opacity:0.6" />
+          <stop offset="35%" style="stop-color:white;stop-opacity:0.3" />
+          <stop offset="50%" style="stop-color:white;stop-opacity:0" />
+          <stop offset="65%" style="stop-color:white;stop-opacity:0.3" />
+          <stop offset="75%" style="stop-color:white;stop-opacity:0.6" />
+          <stop offset="85%" style="stop-color:white;stop-opacity:0.3" />
+          <stop offset="100%" style="stop-color:white;stop-opacity:0" />
+        </linearGradient>
+      </defs>
+      <path d="M0,50 Q25,10 50,50 T100,50 T150,50 T200,50" 
+            fill="none" 
+            stroke="url(#waveGrad)" 
+            stroke-width="40" 
+            stroke-linecap="round"/>
+      <path d="M0,55 Q25,15 50,55 T100,55 T150,55 T200,55" 
+            fill="none" 
+            stroke="url(#waveGrad)" 
+            stroke-width="20" 
+            stroke-linecap="round"
+            opacity="0.5"/>
+    </svg>
+  </div>
+</div>
 
-<div class="app-container" id="appContainer">
-  <!-- 天気画面 -->
-  <div class="weather-screen">
-    <div class="wind-lines">
-      <div class="wind-line">
-        <svg viewBox="0 0 200 100" preserveAspectRatio="none">
-          <defs>
-            <linearGradient id="waveGrad" x1="0%" y1="0%" x2="100%" y2="0%">
-              <stop offset="0%" style="stop-color:white;stop-opacity:0" />
-              <stop offset="15%" style="stop-color:white;stop-opacity:0.3" />
-              <stop offset="25%" style="stop-color:white;stop-opacity:0.6" />
-              <stop offset="35%" style="stop-color:white;stop-opacity:0.3" />
-              <stop offset="50%" style="stop-color:white;stop-opacity:0" />
-              <stop offset="65%" style="stop-color:white;stop-opacity:0.3" />
-              <stop offset="75%" style="stop-color:white;stop-opacity:0.6" />
-              <stop offset="85%" style="stop-color:white;stop-opacity:0.3" />
-              <stop offset="100%" style="stop-color:white;stop-opacity:0" />
-            </linearGradient>
-          </defs>
-          <path d="M0,50 Q25,10 50,50 T100,50 T150,50 T200,50" 
-                fill="none" 
-                stroke="url(#waveGrad)" 
-                stroke-width="40" 
-                stroke-linecap="round"/>
-          <path d="M0,55 Q25,15 50,55 T100,55 T150,55 T200,55" 
-                fill="none" 
-                stroke="url(#waveGrad)" 
-                stroke-width="20" 
-                stroke-linecap="round"
-                opacity="0.5"/>
-        </svg>
-      </div>
+<div class="container">
+  <div class="time-wrapper">
+    <div class="time-box hour">
+      <div class="digit" id="hourTen">-</div>
+      <div class="digit" id="hourOne">-</div>
     </div>
-
-    <div class="container">
-      <div class="time-wrapper">
-        <div class="time-box hour">
-          <div class="digit" id="hourTen">-</div>
-          <div class="digit" id="hourOne">-</div>
-        </div>
-        <div class="colon"></div>
-        <div class="time-box minute">
-          <div class="digit" id="minTen">-</div>
-          <div class="digit" id="minOne">-</div>
-        </div>
-      </div>
-
-      <div id="date" class="date">--</div>
-
-      <div class="weather">
-        <div id="weatherIcon" class="weather-icon">--</div>
-        <div id="temp" class="temp">--℃ / --℃（--℃）</div>
-        <div id="rain" class="rain">
-          <div class="rain-display">☂️ --%</div>
-          <div class="wind-display">🌬️ --m/s</div>
-        </div>
-      </div>
+    <div class="colon"></div>
+    <div class="time-box minute">
+      <div class="digit" id="minTen">-</div>
+      <div class="digit" id="minOne">-</div>
     </div>
-
-    <div class="weekly-forecast" id="weeklyForecast"></div>
-
-    <div id="edgeDot" class="edge-dot"></div>
-
-    <div class="scroll-button" id="scrollDownBtn">▼</div>
-    <div class="scroll-button hidden" id="scrollUpBtn">▲</div>
   </div>
 
-  <!-- ニュース画面 -->
-  <div class="news-screen">
-    <div class="news-container" id="newsContainer">
-      <div class="news-loading">ニュースを読み込み中...</div>
+  <div id="date" class="date">--</div>
+
+  <div class="weather">
+    <div id="weatherIcon" class="weather-icon">--</div>
+    <div id="temp" class="temp">--℃ / --℃（--℃）</div>
+    <div id="rain" class="rain">
+      <div class="rain-display">☂️ --%</div>
+      <div class="wind-display">🌬️ --m/s</div>
     </div>
   </div>
 </div>
 
+<div class="weekly-forecast" id="weeklyForecast"></div>
+
+<div id="edgeDot" class="edge-dot"></div>
+
+<div class="scroll-button" id="scrollDownBtn">▼</div>
+<div class="scroll-button hidden" id="scrollUpBtn">▲</div>
+
 <script>
-/* ===== 画面切り替え ===== */
-let currentView = 'weather';
-const appContainer = document.getElementById('appContainer');
-const tapHint = document.getElementById('tapHint');
-
-// 天気画面全体でクリック/タップで切り替え
-document.addEventListener('click', (e) => {
-  // スクロールボタンのクリックは除外
-  if (e.target.closest('.scroll-button')) return;
-  
-  // ニュース画面のリンククリックは除外
-  if (e.target.closest('a')) return;
-  
-  if (currentView === 'weather') {
-    // 天気画面をクリック
-    currentView = 'news';
-    appContainer.classList.add('show-news');
-    tapHint.textContent = 'タップで天気表示';
-    if (!newsLoaded) {
-      fetchNews();
-    }
-  } else {
-    // ニュース画面をクリック
-    currentView = 'weather';
-    appContainer.classList.remove('show-news');
-    tapHint.textContent = 'タップでニュース表示';
-  }
-});
-
 /* ===== 時刻 ===== */
 let lastMinute = null;
 let lastSecond = null;
@@ -765,43 +600,15 @@ function updateTime() {
 updateTime();
 setInterval(updateTime, 1000);
 
-let preventScroll = true;
-let touchStartY = 0;
 
-document.body.addEventListener('touchstart', (e) => {
-  touchStartY = e.touches[0].clientY;
-}, { passive: true });
 
-document.body.addEventListener('touchmove', (e) => {
-  if (preventScroll && currentView === 'weather') {
-    const touchY = e.touches[0].clientY;
-    const touchDiff = Math.abs(touchY - touchStartY);
-    if (touchDiff > 10) {
-      e.preventDefault();
-    }
-  }
-}, { passive: false });
-
-function checkScrollButtonVisibility() {
-  if (window.innerHeight <= 600 && window.innerWidth <= 600) {
-    document.body.classList.add('allow-scroll');
-    preventScroll = false;
-  } else {
-    document.body.classList.remove('allow-scroll');
-    preventScroll = true;
-  }
-}
-
-checkScrollButtonVisibility();
-window.addEventListener('resize', checkScrollButtonVisibility);
+const dot = document.getElementById("edgeDot");
 
 setTimeout(() => {
   if (dot && dot.classList) {
     dot.classList.add('active');
   }
 }, 800);
-
-const dot = document.getElementById("edgeDot");
 
 function updateEdgeDot() {
   const now = new Date();
@@ -994,64 +801,6 @@ function toggleWindDisplay() {
 fetchWeather();
 setInterval(fetchWeather, 30 * 60 * 1000);
 setInterval(toggleWindDisplay, 15000);
-
-/* ===== ニュース取得 ===== */
-let newsLoaded = false;
-
-async function fetchNews() {
-  const newsContainer = document.getElementById('newsContainer');
-  newsContainer.innerHTML = '<div class="news-loading">ニュースを読み込み中...</div>';
-  
-  try {
-    // NHKニュースRSSをCORSプロキシ経由で取得
-    const rssUrl = 'https://www3.nhk.or.jp/rss/news/cat0.xml';
-    const proxyUrl = 'https://api.allorigins.win/get?url=';
-    
-    const response = await fetch(proxyUrl + encodeURIComponent(rssUrl));
-    const data = await response.json();
-    const text = data.contents;
-    
-    const parser = new DOMParser();
-    const xml = parser.parseFromString(text, 'text/xml');
-    const items = xml.querySelectorAll('item');
-    
-    if (items.length === 0) {
-      throw new Error('ニュース項目が見つかりません');
-    }
-    
-    newsContainer.innerHTML = '';
-    
-    // 5-10個のニュース見出しのみ表示
-    const newsCount = Math.min(10, items.length);
-    
-    for (let i = 0; i < newsCount; i++) {
-      const item = items[i];
-      const title = item.querySelector('title')?.textContent || '';
-      const link = item.querySelector('link')?.textContent || '';
-      
-      const newsItem = document.createElement('div');
-      newsItem.className = 'news-item';
-      newsItem.innerHTML = `
-        <a href="${link}" target="_blank" class="news-item-link">
-          <div class="news-item-title">${title}</div>
-        </a>
-      `;
-      newsContainer.appendChild(newsItem);
-    }
-    
-    // 最後にスペーサーを追加
-    const spacer = document.createElement('div');
-    spacer.style.height = '30vh';
-    newsContainer.appendChild(spacer);
-    
-    newsLoaded = true;
-  } catch (error) {
-    console.error('ニュース取得エラー:', error);
-    newsContainer.innerHTML = `
-      <div class="news-loading">ニュースの取得に失敗しました<br>${error.message}</div>
-    `;
-  }
-}
 
 /* ===== スクロール制御 ===== */
 const scrollDownBtn = document.getElementById('scrollDownBtn');
