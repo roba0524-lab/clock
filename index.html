@@ -923,6 +923,354 @@ window.addEventListener('scroll', () => {
     }
   }
 });
+
+/* ===== タップアニメーション ===== */
+let uiAnimating = false;
+
+document.addEventListener('click', (e) => {
+  if (e.target.closest('.scroll-button')) return;
+  spawnBurst(e.clientX, e.clientY);
+  triggerUIAnimation();
+});
+
+document.addEventListener('touchstart', (e) => {
+  if (e.target.closest('.scroll-button')) return;
+  const t = e.touches[0];
+  spawnBurst(t.clientX, t.clientY);
+  triggerUIAnimation();
+}, { passive: true });
+
+/* ===== UI要素ランダムアニメーション ===== */
+const UI_ANIMS = [
+  'scatter',    // バラバラに飛び散って戻る
+  'spin',       // 各桁がバラバラに回転
+  'rubber',     // ぐにゃぐにゃ伸縮
+  'gravity',    // 下に落ちて跳ね返る
+  'vortex',     // 渦を巻いて集まる
+  'glitch',     // グリッチノイズ
+  'flip3d',     // 3D回転して戻る
+  'wave',       // 波のように順番にジャンプ
+];
+
+function triggerUIAnimation() {
+  if (uiAnimating) return;
+  uiAnimating = true;
+
+  const anim = pick(UI_ANIMS);
+  const digits = [
+    document.getElementById('hourTen'),
+    document.getElementById('hourOne'),
+    document.getElementById('minTen'),
+    document.getElementById('minOne'),
+  ];
+  const extras = [
+    document.getElementById('date'),
+    document.getElementById('weatherIcon'),
+    document.getElementById('temp'),
+    document.getElementById('rain'),
+  ];
+  const all = [...digits, ...extras];
+
+  if (anim === 'scatter') animScatter(all);
+  else if (anim === 'spin')    animSpin(digits, extras);
+  else if (anim === 'rubber')  animRubber(all);
+  else if (anim === 'gravity') animGravity(all);
+  else if (anim === 'vortex')  animVortex(all);
+  else if (anim === 'glitch')  animGlitch(all);
+  else if (anim === 'flip3d')  animFlip3d(all);
+  else                         animWave(all);
+
+  setTimeout(() => { uiAnimating = false; }, 2000);
+}
+
+/* バラバラに飛び散って戻る */
+function animScatter(els) {
+  els.forEach((el, i) => {
+    const tx = rand(-300, 300);
+    const ty = rand(-300, 300);
+    const rot = rand(-720, 720);
+    const delay = i * 40;
+    el.animate([
+      { transform: 'translate(0,0) rotate(0deg) scale(1)', opacity: 1 },
+      { transform: `translate(${tx}px,${ty}px) rotate(${rot}deg) scale(${rand(0.1,0.5)})`, opacity: 0, offset: 0.45 },
+      { transform: `translate(${tx}px,${ty}px) rotate(${rot}deg) scale(${rand(0.1,0.5)})`, opacity: 0, offset: 0.55 },
+      { transform: 'translate(0,0) rotate(0deg) scale(1)', opacity: 1 },
+    ], { duration: 1200, delay, easing: 'cubic-bezier(0.68,-0.55,0.27,1.55)', fill: 'none' });
+  });
+}
+
+/* バラバラに高速スピン */
+function animSpin(digits, extras) {
+  digits.forEach((el, i) => {
+    const dir = Math.random() < 0.5 ? 1 : -1;
+    const spins = Math.floor(rand(2, 5));
+    el.animate([
+      { transform: 'rotate(0deg) scale(1)' },
+      { transform: `rotate(${dir * spins * 360}deg) scale(${rand(0.6,1.4)})`, offset: 0.6 },
+      { transform: 'rotate(0deg) scale(1)' },
+    ], { duration: rand(800, 1400), delay: i * 80, easing: 'cubic-bezier(0.68,-0.55,0.27,1.55)', fill: 'none' });
+  });
+  extras.forEach((el, i) => {
+    const dir = Math.random() < 0.5 ? 1 : -1;
+    el.animate([
+      { transform: 'rotate(0deg)' },
+      { transform: `rotate(${dir * rand(180,540)}deg) scale(${rand(0.7,1.3)})`, offset: 0.5 },
+      { transform: 'rotate(0deg)' },
+    ], { duration: rand(700, 1200), delay: i * 60 + 200, easing: 'cubic-bezier(0.68,-0.55,0.27,1.55)', fill: 'none' });
+  });
+}
+
+/* ぐにゃぐにゃ伸縮 */
+function animRubber(els) {
+  els.forEach((el, i) => {
+    const sx = rand(0.3, 2.5);
+    const sy = rand(0.3, 2.5);
+    el.animate([
+      { transform: 'scale(1,1)' },
+      { transform: `scale(${sx},${1/sx})`, offset: 0.2 },
+      { transform: `scale(${1/sy},${sy})`, offset: 0.4 },
+      { transform: `scale(${rand(1.2,2)},${rand(0.3,0.7)})`, offset: 0.6 },
+      { transform: `scale(${rand(0.5,0.8)},${rand(1.2,1.8)})`, offset: 0.8 },
+      { transform: 'scale(1,1)' },
+    ], { duration: rand(900, 1500), delay: i * 50, easing: 'ease-in-out', fill: 'none' });
+  });
+}
+
+/* 重力落下 → 跳ね返り */
+function animGravity(els) {
+  els.forEach((el, i) => {
+    const drop = rand(80, 200);
+    el.animate([
+      { transform: 'translateY(0) scaleY(1)', easing: 'ease-in' },
+      { transform: `translateY(${drop}px) scaleY(0.7)`, offset: 0.4, easing: 'ease-out' },
+      { transform: `translateY(-${drop*0.5}px) scaleY(1.2)`, offset: 0.6, easing: 'ease-in' },
+      { transform: `translateY(${drop*0.2}px) scaleY(0.9)`, offset: 0.8, easing: 'ease-out' },
+      { transform: 'translateY(0) scaleY(1)' },
+    ], { duration: rand(900, 1300), delay: i * 60, fill: 'none' });
+  });
+}
+
+/* 渦巻いて集まる */
+function animVortex(els) {
+  els.forEach((el, i) => {
+    const angle = (Math.PI * 2 / els.length) * i;
+    const r = rand(100, 250);
+    const tx = Math.cos(angle) * r;
+    const ty = Math.sin(angle) * r;
+    el.animate([
+      { transform: 'translate(0,0) rotate(0deg) scale(1)', opacity: 1 },
+      { transform: `translate(${tx}px,${ty}px) rotate(${rand(180,540)}deg) scale(0.2)`, opacity: 0.2, offset: 0.5 },
+      { transform: 'translate(0,0) rotate(720deg) scale(1)', opacity: 1 },
+    ], { duration: rand(1000, 1600), delay: i * 30, easing: 'cubic-bezier(0.4,0,0.2,1)', fill: 'none' });
+  });
+}
+
+/* グリッチ */
+function animGlitch(els) {
+  els.forEach((el) => {
+    let count = 0;
+    const total = Math.floor(rand(6, 14));
+    const iv = setInterval(() => {
+      const tx = rand(-20, 20);
+      const ty = rand(-10, 10);
+      const skew = rand(-15, 15);
+      const hue = Math.random() < 0.3 ? `hue-rotate(${rand(0,360)}deg)` : '';
+      el.style.transform = `translate(${tx}px,${ty}px) skewX(${skew}deg)`;
+      el.style.filter = hue;
+      el.style.opacity = Math.random() < 0.2 ? '0' : '1';
+      count++;
+      if (count >= total) {
+        clearInterval(iv);
+        el.style.transform = '';
+        el.style.filter = '';
+        el.style.opacity = '1';
+      }
+    }, 60);
+  });
+}
+
+/* 3D フリップ */
+function animFlip3d(els) {
+  els.forEach((el, i) => {
+    const axis = Math.random() < 0.5 ? 'X' : 'Y';
+    const deg  = pick([180, 360, 540, -360]);
+    el.animate([
+      { transform: `rotate${axis}(0deg) scale(1)` },
+      { transform: `rotate${axis}(${deg/2}deg) scale(${rand(0.3,0.8)})`, offset: 0.5 },
+      { transform: `rotate${axis}(${deg}deg) scale(1)` },
+    ], { duration: rand(700, 1300), delay: i * 70, easing: 'cubic-bezier(0.68,-0.55,0.27,1.55)', fill: 'none' });
+  });
+}
+
+/* 波のように順番にジャンプ */
+function animWave(els) {
+  els.forEach((el, i) => {
+    const height = rand(40, 120);
+    el.animate([
+      { transform: 'translateY(0) scale(1)' },
+      { transform: `translateY(-${height}px) scale(${rand(0.8,1.3)})`, offset: 0.3 },
+      { transform: `translateY(${height*0.2}px) scale(${rand(0.9,1.1)})`, offset: 0.6 },
+      { transform: 'translateY(0) scale(1)' },
+    ], { duration: rand(600, 1000), delay: i * 100, easing: 'cubic-bezier(0.68,-0.55,0.27,1.55)', fill: 'none' });
+  });
+}
+
+const EMOJIS = ['⭐','🌟','✨','💫','❤️','🧡','💛','💚','💙','💜','🫧','❄️','🌸','🎆','🎇','💥','🌈','🦋','🍀','🎉'];
+const TYPES  = ['particle', 'ring', 'shockwave', 'beam', 'emoji'];
+
+function rand(a, b) { return Math.random() * (b - a) + a; }
+function pick(arr)  { return arr[Math.floor(Math.random() * arr.length)]; }
+
+function spawnBurst(cx, cy) {
+  const count = Math.floor(rand(4, 7));
+  for (let i = 0; i < count; i++) {
+    setTimeout(() => {
+      const type = pick(TYPES);
+      if (type === 'particle') spawnParticles(cx, cy);
+      else if (type === 'ring')      spawnRing(cx, cy);
+      else if (type === 'shockwave') spawnShockwave(cx, cy);
+      else if (type === 'beam')      spawnBeams(cx, cy);
+      else                           spawnEmojis(cx, cy);
+    }, i * 60);
+  }
+}
+
+/* --- パーティクル噴出 --- */
+function spawnParticles(cx, cy) {
+  const colors = ['#fff','#ffe066','#ff6eb4','#66e0ff','#b8ff66','#ff9966','#cc88ff'];
+  const n = Math.floor(rand(30, 50));
+  for (let i = 0; i < n; i++) {
+    const el = document.createElement('div');
+    const size = rand(6, 18);
+    const angle = rand(0, Math.PI * 2);
+    const speed = rand(80, 280);
+    const color = pick(colors);
+    const shape = Math.random() < 0.5 ? '50%' : `${rand(2,6)}px`;
+    el.style.cssText = `
+      position:fixed; left:${cx}px; top:${cy}px;
+      width:${size}px; height:${size}px;
+      background:${color}; border-radius:${shape};
+      pointer-events:none; z-index:99999;
+      box-shadow: 0 0 ${size*2}px ${color};
+      transform:translate(-50%,-50%);
+    `;
+    document.body.appendChild(el);
+    const tx = Math.cos(angle) * speed;
+    const ty = Math.sin(angle) * speed;
+    const dur = rand(600, 1200);
+    el.animate([
+      { transform: `translate(-50%,-50%) scale(1)`, opacity: 1 },
+      { transform: `translate(calc(-50% + ${tx}px), calc(-50% + ${ty}px)) scale(0)`, opacity: 0 }
+    ], { duration: dur, easing: 'cubic-bezier(0,0,0.2,1)', fill: 'forwards' })
+      .onfinish = () => el.remove();
+  }
+}
+
+/* --- 光の輪 --- */
+function spawnRing(cx, cy) {
+  const colors = ['#fff','#ffe066','#ff6eb4','#66e0ff','#b8ff66'];
+  const rings = Math.floor(rand(3, 6));
+  for (let i = 0; i < rings; i++) {
+    setTimeout(() => {
+      const el = document.createElement('div');
+      const color = pick(colors);
+      const size = rand(20, 60);
+      el.style.cssText = `
+        position:fixed; left:${cx}px; top:${cy}px;
+        width:${size}px; height:${size}px;
+        border: ${rand(3,8)}px solid ${color};
+        border-radius:50%; pointer-events:none; z-index:99999;
+        transform:translate(-50%,-50%) scale(0);
+        box-shadow: 0 0 20px ${color}, inset 0 0 20px ${color};
+      `;
+      document.body.appendChild(el);
+      const maxScale = rand(4, 12);
+      el.animate([
+        { transform: `translate(-50%,-50%) scale(0)`, opacity: 1 },
+        { transform: `translate(-50%,-50%) scale(${maxScale})`, opacity: 0 }
+      ], { duration: rand(500, 900), easing: 'ease-out', fill: 'forwards' })
+        .onfinish = () => el.remove();
+    }, i * 80);
+  }
+}
+
+/* --- 衝撃波 --- */
+function spawnShockwave(cx, cy) {
+  const el = document.createElement('div');
+  const color = pick(['#fff','#ffe066','#ff6eb4','#66e0ff']);
+  el.style.cssText = `
+    position:fixed; left:${cx}px; top:${cy}px;
+    width:10px; height:10px;
+    background: radial-gradient(circle, ${color}aa 0%, transparent 70%);
+    border-radius:50%; pointer-events:none; z-index:99999;
+    transform:translate(-50%,-50%) scale(0);
+  `;
+  document.body.appendChild(el);
+  el.animate([
+    { transform: `translate(-50%,-50%) scale(0)`, opacity: 1 },
+    { transform: `translate(-50%,-50%) scale(60)`, opacity: 0 }
+  ], { duration: 700, easing: 'ease-out', fill: 'forwards' })
+    .onfinish = () => el.remove();
+}
+
+/* --- 光線 --- */
+function spawnBeams(cx, cy) {
+  const n = Math.floor(rand(8, 16));
+  const colors = ['#fff','#ffe066','#ff6eb4','#66e0ff','#b8ff66','#ff9966'];
+  for (let i = 0; i < n; i++) {
+    const el = document.createElement('div');
+    const angle = (360 / n) * i + rand(-10, 10);
+    const length = rand(80, 220);
+    const width = rand(2, 8);
+    const color = pick(colors);
+    el.style.cssText = `
+      position:fixed; left:${cx}px; top:${cy}px;
+      width:${length}px; height:${width}px;
+      background: linear-gradient(to right, ${color}, transparent);
+      transform-origin: left center;
+      transform: rotate(${angle}deg) scaleX(0);
+      pointer-events:none; z-index:99999;
+      border-radius:${width}px;
+      box-shadow: 0 0 10px ${color};
+    `;
+    document.body.appendChild(el);
+    el.animate([
+      { transform: `rotate(${angle}deg) scaleX(0)`, opacity: 1 },
+      { transform: `rotate(${angle}deg) scaleX(1)`, opacity: 0 }
+    ], { duration: rand(400, 800), easing: 'ease-out', fill: 'forwards' })
+      .onfinish = () => el.remove();
+  }
+}
+
+/* --- 絵文字噴出 --- */
+function spawnEmojis(cx, cy) {
+  const n = Math.floor(rand(12, 20));
+  for (let i = 0; i < n; i++) {
+    const el = document.createElement('div');
+    const emoji = pick(EMOJIS);
+    const angle = rand(0, Math.PI * 2);
+    const speed = rand(100, 300);
+    const size  = rand(20, 48);
+    const rot   = rand(-720, 720);
+    el.style.cssText = `
+      position:fixed; left:${cx}px; top:${cy}px;
+      font-size:${size}px; line-height:1;
+      pointer-events:none; z-index:99999;
+      transform:translate(-50%,-50%);
+      user-select:none;
+    `;
+    el.textContent = emoji;
+    document.body.appendChild(el);
+    const tx = Math.cos(angle) * speed;
+    const ty = Math.sin(angle) * speed - rand(50, 150);
+    const dur = rand(800, 1400);
+    el.animate([
+      { transform: `translate(-50%,-50%) rotate(0deg) scale(1)`, opacity: 1 },
+      { transform: `translate(calc(-50% + ${tx}px), calc(-50% + ${ty}px)) rotate(${rot}deg) scale(0.3)`, opacity: 0 }
+    ], { duration: dur, easing: 'cubic-bezier(0.2,0,0.8,1)', fill: 'forwards' })
+      .onfinish = () => el.remove();
+  }
+}
 </script>
 
 </body>
